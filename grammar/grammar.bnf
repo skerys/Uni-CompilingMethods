@@ -42,9 +42,9 @@
 <input_stmt>          ::= "read" <identifier>
 <output_stmt>         ::= "write" <expression>
 
-<stmt>       ::= <expression> | <declare_stmt> | <control_stmt> | <return_stmt> | <break_stmt> | <next_stmt> | <io_stmt>
-<stmts>      ::= <stmt> | <stmts> <stmt>
-<stmt_block> ::= "{" <stmts> "}" | "{" "}"
+<stmt>                ::= <expression> | <declare_stmt> | <control_stmt> | <return_stmt> | <break_stmt> | <next_stmt> | <io_stmt>
+<stmts>               ::= <stmt> | <stmts> <stmt>
+<stmt_block>          ::= "{" <stmts> "}" | "{" "}"
 
 #------------------CLASS-------------------------------------
 
@@ -96,8 +96,8 @@
 
 <array_subscripting_expr>  ::= <postfix_expr> "[" <expression> "]"
 <increment_decrement_expr> ::= <postfix_expr> <increment_decrement_operator>
-<function_call_expr>  ::= <postfix_expr> <params_call>
-<field_access_expr>   ::= <postfix_expr> "." <identifier>
+<function_call_expr>       ::= <postfix_expr> <params_call>
+<field_access_expr>        ::= <postfix_expr> "." <identifier>
 
 
 <expression>      ::=    <or_expr> | <or_expr> <assignment_op> <expression>
