@@ -1,0 +1,20 @@
+func int fibbo (int number)
+{
+    
+    int current = 1
+    int previous = 0
+
+    for int a = 1; i <= number; i++
+    {
+        int sumOfPrev2 = previous + current
+        previous = current
+        current = sumOfPrev2
+    }
+    return current
+}
+
+func void main()
+{
+    int test = fibbo(5)
+    
+}
