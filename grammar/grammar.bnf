@@ -14,8 +14,15 @@
 <underscore>   ::=  "_"
 <ident_char>   ::=   <letter> | <digit> | "_"
 
-<input_char>   ::=  0x00 | 0x01 | ... | 0xFF (except ' " ' and ' \ ')
-<escape_char>  ::=  ' \ ' ' \ ' | ' \ ' ' " '  
+<newline>      ::=  0x12 | 0x15 0x12
+<comment>      ::=  "#" <texts> <newline> | "/#" <texts> "#/" | "#" <newline> | "/##/"
+
+<texts>        ::=  <texts> <texts> | <text>
+<text>         ::=  <text_no_nl> | <newline>
+<texts_no_nl>  ::=  <texts_no_nl> <text_no_nl>
+<text_no_nl>   ::=  0x20 | 0x21 | ... | 0xFF
+<input_char>   ::=  0x00 | 0x01 | ... | 0xFF (except ' " ' , '#' and ' \ ')
+<escape_char>  ::=  ' \ ' ' \ ' | ' \ ' ' " '  | ' \ '  ' # ' 
 <string_char>  ::=  <input_char> | <escape_char>
 <string_chars> ::=  <string_char> | <string_chars> <string_char>
 
@@ -26,11 +33,14 @@
 <declare_stmt_simple> ::= <type_name> <identifier>
 <declare_stmt_init>   ::= <type_name> <identifier> "=" <expression>
 <declare_array>       ::= <type_name> <identifier> "[" <expression> "]"
-<declare_array_init>  ::= <type_name> <identifier> "[" <literal_int>"]" "=" "{" <array_initializer> "}"
-<array_initializer>   ::= <array_initializer> "," <literal>
+<declare_array_init>  ::= <type_name> <identifier> "[" <expression> "]" "=" "{" <array_initializer> "}"
+<array_initializer>   ::= <array_initializer> "," <expression>
 
 <control_stmt>        ::= <if_stmt> | <while_stmt> | <for_stmt>
-<if_stmt>             ::= "if" <expression> <stmt_block> | "if" <expression> <stmt_block> "else" <stmt_block>
+<if_stmt>             ::= "if" <expression> <stmt_block>
+<elif_stmt>           ::= <if_stmt> | <elif_stmt> "elif" <expression> <stmt_block>
+<full_if_stmt>        ::= <elif_stmt> | <elif_stmt> "else" <stmt_block>
+
 <while_stmt>          ::= "while" <expression>  <stmt_block>
 <for_stmt>            ::= "for" <declare_stmt_init> ";" <expression> ";" <expression> <stmt_block>
 
@@ -39,18 +49,20 @@
 <next_stmt>           ::= "next"
 
 <io_stmt>             ::= <input_stmt> | <output_stmt>
-<input_stmt>          ::= "read" <identifier>
-<output_stmt>         ::= "write" <expression>
+<input_stmt>          ::= "read" <identifiers>
+<output_stmt>         ::= "write" <expressions>
 
+<separator>           ::= <newline>
 <stmt>                ::= <expression> | <declare_stmt> | <control_stmt> | <return_stmt> | <break_stmt> | <next_stmt> | <io_stmt>
-<stmts>               ::= <stmt> | <stmts> <stmt>
+<stmt_with_sep>       ::= <stmt> <separator>
+<stmts>               ::= <stmt_with_sep> | <stmts> <stmt_with_sep>
 <stmt_block>          ::= "{" <stmts> "}" | "{" "}"
 
 #------------------CLASS-------------------------------------
 
-<class_declare>       ::= "class" <identifier> "{" "}" | "class" <identifier> "{" <class_stmt_block> "}"
-<class_stmt_block>    ::= <class_stmt_block> <class_stmt>
-<class_stmt>          ::= <method_declare_stmt> | <member_declare_stmt>
+<class_declare>       ::= "class" <identifier> "{" "}" | "class" <identifier> "{" <class_body> "}"
+<class_body>          ::= <class_body> <class_body_line> | <class_body_line>
+<class_body_line>     ::= <method_declare_stmt> | <member_declare_stmt>
 
 <accessibility_name>  ::= "private" | "public"
 
@@ -65,47 +77,51 @@
 <params_seq>          ::= <param_decl> | <params_seq> "," <param_decl>
 <param_decl>          ::= <type_name> <identifier>
 
-<params_call>         ::= "(" <params_call_seq>
-<params_call_seq>     ::= ")" | <expression> "," <params_call_seq>
+<params_call>         ::= "(" ")"  | "(" <params_call_seq> ")"
+<params_call_seq>     ::= <expressions>
 
 
 #----------------PRIMARIES-----------------------------
 
 <literal_int>         ::=    <digits>
 <literal_float>       ::=    <digits> "." <digits> | <digits> "." | "." <digits>
+<literal_float_exp>   ::=    <literal_float> "e" <literal_int> | <literal_float> "e-" <literal_int>
 <literal_bool>        ::=    "true" | "false"
 <literal_string>      ::=    '"' <string_chars> '"' | '"' '"'
 
-<literal>             ::=    <literal_int> | <literal_float> | <literal_bool> | <literal_string>
+<literal>             ::=    <literal_int> | <literal_float> | <literal_bool> | <literal_string> | <literal_float_exp>
 
 <primitive_type_name> ::=    "int" | "float" | "bool" | "string" | "void"
 <type_name>           ::=    <primitive_type_name> | <identifier> | <type_name> "[" "]"
 
-<identifier>          ::=    <letter> | <underscore> <ident_char> | <identifier> <ident_char>
+<identifier>          ::=    <ident_char> | <underscore> <ident_char> | <identifier> <ident_char>
+<identifiers>         ::=    <identifier> | <identifiers> "," <identifier>
 
 #----------------EXPRESSIONS---------------------------
-
+ 
 <and_op>        ::= "&" "&"
 <or_op>         ::= "|" "|"
-<cmp_op>        ::= ">" | "<" | ">" "=" | "<" "=" | "!" "=" | "=" "="
+<cmp_more_op>   ::= ">" | "<" | ">" "=" | "<" "="
+<cmp_equals_op> ::= "!" "=" | "=" "="
 <add_op>        ::= "+" | "-"
 <mult_op>       ::= "*" | "/"
-<unary_op>      ::= <add_op> | "!"
+<unary_op>      ::= "+" | "-" | "!"
 <assignment_op> ::= "="
 <increment_decrement_expr> ::= "+" "+" | "-" "-"
 
 <array_subscripting_expr>  ::= <postfix_expr> "[" <expression> "]"
 <increment_decrement_expr> ::= <postfix_expr> <increment_decrement_operator>
-<function_call_expr>       ::= <postfix_expr> <params_call>
+<function_call_expr>       ::= <identifier> <params_call> | <field_access_expr> <params_call>
 <field_access_expr>        ::= <postfix_expr> "." <identifier>
 
-
+<expressions>     ::=    <expressions> | <expressions> "," <expression>
 <expression>      ::=    <or_expr> | <or_expr> <assignment_op> <expression>
 <or_expr>         ::=    <and_expr>  | <or_expr> <or_op> <and_expr>
-<and_expr>        ::=    <cmp_expr>  | <and_expr> <and_op> <cmp_expr>
-<cmp_expr>        ::=    <add_expr>  | <cmp_expr> <cmp_op> <add_expr>
+<and_expr>        ::=    <cmp_more_expr>  | <and_expr> <and_op> <cmp_more_expr>
+<cmp_more_expr>   ::=    <cmp_equals_expr>  | <cmp_more_expr> <cmp_more_op> <cmp_equals_expr>
+<cmp_equals_expr> ::=    <add_expr>  | <cmp_equals_expr> <cmp_equals_op> <add_expr>
 <add_expr>        ::=    <mult_expr> | <add_expr> <add_op> <mult_expr>
-<mult_expr>       ::=    <unary_expr> | <mult_expr> <mult_op> <primary_expr>
+<mult_expr>       ::=    <unary_expr> | <mult_expr> <mult_op> <unary_expr>
 <unary_expr>      ::=    <postfix_expr> | <unary_op> <unary_expr>
 <postfix_expr>    ::=    <primary_expr> | <array_subscripting_expr> | <function_call_expr> | <increment_decrement_expr> | <field_access_expr>
 <primary_expr>    ::=    <identifier> | <literal> | "(" <expression> ")"
