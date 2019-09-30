@@ -94,7 +94,7 @@
 <primitive_type_name> ::=    "int" | "float" | "bool" | "string" | "void"
 <type_name>           ::=    <primitive_type_name> | <identifier> | <type_name> "[" "]"
 
-<identifier>          ::=    <ident_char> | <underscore> <ident_char> | <identifier> <ident_char>
+<identifier>          ::=    <letter> | <underscore> | <identifier> <ident_char>
 <identifiers>         ::=    <identifier> | <identifiers> "," <identifier>
 
 #----------------EXPRESSIONS---------------------------
