@@ -15,7 +15,7 @@
 <ident_char>   ::=   <letter> | <digit> | "_"
 
 <newline>      ::=  0x12 | 0x15 0x12
-<comment>      ::=  "#" <texts> <newline> | "/#" <texts> "#/" | "#" <newline> | "/##/"
+<comment>      ::=  "#" <texts_no_nl> <newline> | "/#" <texts> "#/" | "#" <newline> | "/##/"
 
 <texts>        ::=  <texts> <texts> | <text>
 <text>         ::=  <text_no_nl> | <newline>
@@ -114,7 +114,7 @@
 <function_call_expr>       ::= <identifier> <params_call> | <field_access_expr> <params_call>
 <field_access_expr>        ::= <postfix_expr> "." <identifier>
 
-<expressions>     ::=    <expressions> | <expressions> "," <expression>
+<expressions>     ::=    <expression> | <expressions> "," <expression>
 <expression>      ::=    <or_expr> | <or_expr> <assignment_op> <expression>
 <or_expr>         ::=    <and_expr>  | <or_expr> <or_op> <and_expr>
 <and_expr>        ::=    <cmp_more_expr>  | <and_expr> <and_op> <cmp_more_expr>
