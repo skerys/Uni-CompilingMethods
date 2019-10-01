@@ -17,12 +17,12 @@
 <newline>      ::=  0x12 | 0x15 0x12
 <comment>      ::=  "#" <texts_no_nl> <newline> | "/#" <texts> "#/" | "#" <newline> | "/##/"
 
-<texts>        ::=  <texts> <texts> | <text>
-<text>         ::=  <text_no_nl> | <newline>
-<texts_no_nl>  ::=  <texts_no_nl> <text_no_nl>
-<text_no_nl>   ::=  0x20 | 0x21 | ... | 0xFF
+<text>         ::=  <text> <char> | <char>
+<character>    ::=  <char_no_nl> | <newline>
+<text_no_nl>   ::=  <text_no_nl> <char_no_nl> | <char_no_nl>
+<char_no_nl>   ::=  0x20 | 0x21 | ... | 0xFF
 <input_char>   ::=  0x00 | 0x01 | ... | 0xFF (except ' " ' , '#' and ' \ ')
-<escape_char>  ::=  ' \ ' ' \ ' | ' \ ' ' " '  | ' \ '  ' # ' 
+<escape_char>  ::=  " \" " | " \\ " | " \n " | " \f " | " \r " | " \t " | " \v " | " \# "
 <string_char>  ::=  <input_char> | <escape_char>
 <string_chars> ::=  <string_char> | <string_chars> <string_char>
 
@@ -33,13 +33,12 @@
 <declare_stmt_simple> ::= <type_name> <identifier>
 <declare_stmt_init>   ::= <type_name> <identifier> "=" <expression>
 <declare_array>       ::= <type_name> <identifier> "[" <expression> "]"
-<declare_array_init>  ::= <type_name> <identifier> "[" <expression> "]" "=" "{" <array_initializer> "}"
-<array_initializer>   ::= <array_initializer> "," <expression>
+<declare_array_init>  ::= <type_name> <identifier> "[" <expression> "]" "=" "{" <expressions> "}"
 
-<control_stmt>        ::= <if_stmt> | <while_stmt> | <for_stmt>
+<control_stmt>        ::= <if_else_stmt> | <while_stmt> | <for_stmt>
 <if_stmt>             ::= "if" <expression> <stmt_block>
 <elif_stmt>           ::= <if_stmt> | <elif_stmt> "elif" <expression> <stmt_block>
-<full_if_stmt>        ::= <elif_stmt> | <elif_stmt> "else" <stmt_block>
+<if_else_stmt>        ::= <elif_stmt> | <elif_stmt> "else" <stmt_block>
 
 <while_stmt>          ::= "while" <expression>  <stmt_block>
 <for_stmt>            ::= "for" <declare_stmt_init> ";" <expression> ";" <expression> <stmt_block>
@@ -56,11 +55,11 @@
 <stmt>                ::= <expression> | <declare_stmt> | <control_stmt> | <return_stmt> | <break_stmt> | <next_stmt> | <io_stmt>
 <stmt_with_sep>       ::= <stmt> <separator>
 <stmts>               ::= <stmt_with_sep> | <stmts> <stmt_with_sep>
-<stmt_block>          ::= "{" <stmts> "}" | "{" "}"
+<stmt_block>          ::= "{" <stmts> "}" | "{}"
 
 #------------------CLASS-------------------------------------
 
-<class_declare>       ::= "class" <identifier> "{" "}" | "class" <identifier> "{" <class_body> "}"
+<class_declare>       ::= "class" <identifier> "{}" | "class" <identifier> "{" <class_body> "}"
 <class_body>          ::= <class_body> <class_body_line> | <class_body_line>
 <class_body_line>     ::= <method_declare_stmt> | <member_declare_stmt>
 
@@ -73,13 +72,11 @@
 #------------------FUNCTIONS----------------------------------
 
 <function_decl>       ::= "func" <type_name> <identifier> <params> <stmt_block>
-<params>              ::= "(" ")" | "(" <params_seq> ")"
+<params>              ::= "()" | "(" <params_seq> ")"
 <params_seq>          ::= <param_decl> | <params_seq> "," <param_decl>
 <param_decl>          ::= <type_name> <identifier>
 
-<params_call>         ::= "(" ")"  | "(" <params_call_seq> ")"
-<params_call_seq>     ::= <expressions>
-
+<params_call>         ::= "()"  | "(" <expressions> ")"
 
 #----------------PRIMARIES-----------------------------
 
@@ -114,14 +111,14 @@
 <function_call_expr>       ::= <identifier> <params_call> | <field_access_expr> <params_call>
 <field_access_expr>        ::= <postfix_expr> "." <identifier>
 
-<expressions>     ::=    <expression> | <expressions> "," <expression>
-<expression>      ::=    <or_expr> | <or_expr> <assignment_op> <expression>
-<or_expr>         ::=    <and_expr>  | <or_expr> <or_op> <and_expr>
+<expressions>     ::=    <expression>     | <expressions> "," <expression>
+<expression>      ::=    <or_expr>        | <or_expr> <assignment_op> <expression>
+<or_expr>         ::=    <and_expr>       | <or_expr> <or_op> <and_expr>
 <and_expr>        ::=    <cmp_more_expr>  | <and_expr> <and_op> <cmp_more_expr>
-<cmp_more_expr>   ::=    <cmp_equals_expr>  | <cmp_more_expr> <cmp_more_op> <cmp_equals_expr>
-<cmp_equals_expr> ::=    <add_expr>  | <cmp_equals_expr> <cmp_equals_op> <add_expr>
-<add_expr>        ::=    <mult_expr> | <add_expr> <add_op> <mult_expr>
-<mult_expr>       ::=    <unary_expr> | <mult_expr> <mult_op> <unary_expr>
-<unary_expr>      ::=    <postfix_expr> | <unary_op> <unary_expr>
+<cmp_more_expr>   ::=    <cmp_equals_expr>| <cmp_more_expr> <cmp_more_op> <cmp_equals_expr>
+<cmp_equals_expr> ::=    <add_expr>       | <cmp_equals_expr> <cmp_equals_op> <add_expr>
+<add_expr>        ::=    <mult_expr>      | <add_expr> <add_op> <mult_expr>
+<mult_expr>       ::=    <unary_expr>     | <mult_expr> <mult_op> <unary_expr>
+<unary_expr>      ::=    <postfix_expr>   | <unary_op> <unary_expr>
 <postfix_expr>    ::=    <primary_expr> | <array_subscripting_expr> | <function_call_expr> | <increment_decrement_expr> | <field_access_expr>
 <primary_expr>    ::=    <identifier> | <literal> | "(" <expression> ")"
