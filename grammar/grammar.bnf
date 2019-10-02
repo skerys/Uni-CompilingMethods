@@ -15,9 +15,9 @@
 <ident_char>   ::=   <letter> | <digit> | "_"
 
 <newline>      ::=  0x12 | 0x15 0x12
-<comment>      ::=  "#" <texts_no_nl> <newline> | "/#" <texts> "#/" | "#" <newline> | "/##/"
+<comment>      ::=  "#" <text_no_nl> <newline> | "/#" <text> "#/" | "#" <newline> | "/##/"
 
-<text>         ::=  <text> <char> | <char>
+<text>         ::=  <text> <character> | <character>
 <character>    ::=  <char_no_nl> | <newline>
 <text_no_nl>   ::=  <text_no_nl> <char_no_nl> | <char_no_nl>
 <char_no_nl>   ::=  0x20 | 0x21 | ... | 0xFF
@@ -84,27 +84,27 @@
 <literal_float>       ::=    <digits> "." <digits> | <digits> "." | "." <digits>
 <literal_float_exp>   ::=    <literal_float> "e" <literal_int> | <literal_float> "e-" <literal_int>
 <literal_bool>        ::=    "true" | "false"
-<literal_string>      ::=    '"' <string_chars> '"' | '"' '"'
+<literal_string>      ::=    '"' <string_chars> '"' | '""'
 
 <literal>             ::=    <literal_int> | <literal_float> | <literal_bool> | <literal_string> | <literal_float_exp>
 
 <primitive_type_name> ::=    "int" | "float" | "bool" | "string" | "void"
-<type_name>           ::=    <primitive_type_name> | <identifier> | <type_name> "[" "]"
+<type_name>           ::=    <primitive_type_name> | <identifier> | <type_name> "[]"
 
 <identifier>          ::=    <letter> | <underscore> | <identifier> <ident_char>
 <identifiers>         ::=    <identifier> | <identifiers> "," <identifier>
 
 #----------------EXPRESSIONS---------------------------
  
-<and_op>        ::= "&" "&"
-<or_op>         ::= "|" "|"
-<cmp_more_op>   ::= ">" | "<" | ">" "=" | "<" "="
-<cmp_equals_op> ::= "!" "=" | "=" "="
+<and_op>        ::= "&&"
+<or_op>         ::= "||"
+<cmp_more_op>   ::= ">" | "<" | ">=" | "<="
+<cmp_equals_op> ::= "!" "=" | "=="
 <add_op>        ::= "+" | "-"
 <mult_op>       ::= "*" | "/"
 <unary_op>      ::= "+" | "-" | "!"
 <assignment_op> ::= "="
-<increment_decrement_expr> ::= "+" "+" | "-" "-"
+<increment_decrement_expr> ::= "++" | "--"
 
 <array_subscripting_expr>  ::= <postfix_expr> "[" <expression> "]"
 <increment_decrement_expr> ::= <postfix_expr> <increment_decrement_operator>
