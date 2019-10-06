@@ -14,7 +14,7 @@
 <underscore>   ::=  "_"
 <ident_char>   ::=   <letter> | <digit> | "_"
 
-<newline>      ::=  0x12 | 0x15 0x12
+<newline>      ::=  0xA | 0xD 0xA
 <comment>      ::=  "#" <text_no_nl> <newline> | "/#" <text> "#/" | "#" <newline> | "/##/"
 
 <text>         ::=  <text> <character> | <character>
