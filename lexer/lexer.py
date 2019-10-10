@@ -41,14 +41,52 @@ class Lexer:
                 self.lexStart(char)
             elif self.currentState == State.IDENT:
                 self.lexIdent(char)
+            elif self.currentState == State.LIT_INT:
+                self.lexLitInt(char)
+            elif self.currentState == State.LIT_FLOAT:
+                self.lexLitFloat(char)
+            elif self.currentState == State.LIT_STRING:
+                self.lexLitString(char)
             if char == "\n":
                 self.line_num += 1
             self.offset+=1
 
         self.completeToken(value=self.currentLexeme)
 
+    #TODO: Make escape characters work
+    def lexLitString(self, char):
+        if char != "\n" and char != "\"":
+            self.currentLexeme += char
+        elif char == "\"":
+            self.completeToken(value=self.currentLexeme)
+        else:
+            return
+            #TODO: New line before string ends error
+
+    #TODO: Make const floats with exponents work
+    def lexLitFloat(self, char):
+        if char.isdigit():
+            self.currentLexeme += char
+        elif char.isalpha() :
+            #TODO: Grammar error
+            return
+        else:
+            self.completeToken(value=self.currentLexeme, dec_offset=True)
+
+    def lexLitInt(self, char):
+        if char.isdigit():
+            self.currentLexeme += char
+        elif char.isalpha() :
+            #TODO: Grammar error
+            return
+        elif char == ".":
+            self.currentLexeme += char
+            self.currentState = State.LIT_FLOAT
+        else:
+            self.completeToken(value=self.currentLexeme, dec_offset=True)
+
     def lexIdent(self, char):
-        if char >= "a" and char <= "z":
+        if char.isalpha() or char.isdigit() or char == "_":
             self.currentLexeme += char
             return
         else:
@@ -60,10 +98,18 @@ class Lexer:
             self.currentState = State.OP_PLUS
             self.completeToken()
             return
-        elif char >= "a" and char <= "z":
+        elif char.isalpha() or char == "_":
             self.currentLexeme += char
             self.currentState = State.IDENT
             return
+        elif char.isdigit():
+            self.currentLexeme += char
+            self.currentState = State.LIT_INT
+        elif char == ".":
+            self.currentLexeme += char
+            self.currentState = State.LIT_FLOAT
+        elif char == "\"":
+            self.currentState = State.LIT_STRING
         else:
             return
     
@@ -72,12 +118,16 @@ class Lexer:
 class State(enum.Enum):
     START = "UNCOMPLETED_TOKEN"
     IDENT = "IDENT"
+    LIT_INT = "LIT_INT"
+    LIT_FLOAT = "LIT_FLOAT"
+    LIT_STRING = "LIT_STRING"
     OP_PLUS = "OP_PLUS"
 
 
 
 
-string = 'aaa++++   qweqwrt basqwe'
+
+string = '14894+aasf5+"jeeez"'
 
 lex = Lexer(string)
 lex.lexAll()
