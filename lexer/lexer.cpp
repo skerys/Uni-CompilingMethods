@@ -1,25 +1,59 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
+#include <iomanip>
 
 
 enum TokenType{
-    IDENT, LIT_INT, LIT_FLOAT, LIT_STR, OP_PLUS, OP_INCREMENT, OP_MINUS, OP_DECREMENT, OP_L, OP_LE, OP_H, OP_HE, OP_ASSIGN, OP_E
+    IDENT, LIT_INT, LIT_FLOAT, LIT_STR, OP_PLUS, OP_INCREMENT, OP_MINUS, OP_DECREMENT, OP_L, OP_LE, OP_H, OP_HE, OP_ASSIGN, OP_E,
+    OP_PAREN_OPEN, OP_PAREN_CLOSE, OP_CB_OPEN, OP_CB_CLOSE, OP_SB_OPEN, OP_SB_CLOSE, OP_MULT, OP_LOGIC_AND, OP_LOGIC_OR, OP_LOGIC_NOT, OP_FIELD_ACCESS, OP_COMMA_SEP, OP_SEMICOLON_SEP,
+    KW_IF, KW_ELIF, KW_ELSE, KW_WHILE, KW_FOR, KW_RETURN, KW_BREAK, KW_NEXT, KW_READ, KW_WRITE, KW_CLASS, KW_PRIVATE, KW_PUBLIC, KW_FUNC, KW_INT, KW_FLOAT, KW_BOOL, KW_STRING, KW_VOID, KW_TRUE, KW_FALSE
 };
 
-const std::string TokenNames[] = {"IDENT", "LIT_INT", "LIT_FLOAT", "LIT_STR", "OP_PLUS", "OP_INCREMENT", "OP_MINUS", "OP_DECREMENT", "OP_L", "OP_LE", "OP_H", "OP_HE", "OP_ASSIGN", "OP_E"};
+const std::string TokenNames[] = {"IDENT", "LIT_INT", "LIT_FLOAT", "LIT_STR", "OP_PLUS", "OP_INCREMENT", "OP_MINUS", "OP_DECREMENT", "OP_L", "OP_LE", "OP_H", "OP_HE", "OP_ASSIGN", "OP_E",
+                                  "OP_PAREN_OPEN", "OP_PAREN_CLOSE", "OP_CB_OPEN", "OP_CB_CLOSE", "OP_SB_OPEN", "OP_SB_CLOSE", "OP_MULT", "OP_LOGIC_AND", "OP_LOGIC_OR", "OP_LOGIC_NOT",
+                                  "OP_FIELD_ACCESS", "OP_COMMA_SEP", "OP_SEMICOLON_SEP",
+                                  "KW_IF", "KW_ELIF", "KW_ELSE", "KW_WHILE", "KW_FOR", "KW_RETURN", "KW_BREAK", "KW_NEXT", "KW_READ", "KW_WRITE", "KW_CLASS", "KW_PRIVATE", "KW_PUBLIC",
+                                  "KW_FUNC", "KW_INT", "KW_FLOAT", "KW_BOOL", "KW_STRING", "KW_VOID", "KW_TRUE", "KW_FALSE"};
+
+const std::map<std::string, TokenType> keywords = {
+    {"if", TokenType::KW_IF},
+    {"elif", TokenType::KW_ELIF},
+    {"else", TokenType::KW_ELSE},
+    {"while", TokenType::KW_WHILE},
+    {"for", TokenType::KW_FOR},
+    {"return", TokenType::KW_RETURN},
+    {"break", TokenType::KW_BREAK},
+    {"next", TokenType::KW_NEXT},
+    {"read", TokenType::KW_READ},
+    {"write", TokenType::KW_WRITE},
+    {"class", TokenType::KW_CLASS},
+    {"private", TokenType::KW_PRIVATE},
+    {"public", TokenType::KW_PUBLIC},
+    {"func", TokenType::KW_FUNC},
+    {"int", TokenType::KW_INT},
+    {"float", TokenType::KW_FLOAT},
+    {"bool", TokenType::KW_BOOL},
+    {"string", TokenType::KW_STRING},
+    {"void", TokenType::KW_VOID},
+    {"true", TokenType::KW_TRUE},
+    {"false", TokenType::KW_FALSE}
+};
 
 struct Token{
+    int id;
     TokenType type;
     std::string value;
     int line_no;
+    int column_no;
 
     Token(){}
     Token(TokenType _type, std::string _value, int _line_no) : type(_type), value(_value), line_no(_line_no) {}
 };
 
 enum State{
-    S_START, S_IDENT, S_LIT_INT, S_LIT_FLOAT, S_LIT_FLOAT_EXP_NEG, S_LIT_FLOAT_EXP, S_LIT_STR, S_ESCAPE_CHAR, S_OP_PLUS, S_OP_MINUS, S_OP_LOW, S_OP_HIGH, S_OP_EQUAL
+    S_START, S_IDENT, S_LIT_INT, S_LIT_FLOAT, S_LIT_FLOAT_EXP_NEG, S_LIT_FLOAT_EXP, S_LIT_STR, S_ESCAPE_CHAR, S_OP_PLUS, S_OP_MINUS, S_OP_LOW, S_OP_HIGH, S_OP_EQUAL, S_OP_OR, S_OP_AND, S_OP_DOT
 };
 
 
@@ -31,23 +65,39 @@ public:
     char current_char;
     State current_state = State::S_START;
     std::string current_lexeme;
-    int current_line = 0;
+
+    int current_line = 1;
+    int current_column = 1;
+    int token_id = 0;
 
     std::vector<Token> tokens;
 
     void print_tokens(){
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << "ID" << '|';
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << "LINE" << '|';
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << "COL" << '|';
+            std::cout << std::left << std::setw(12) << std::setfill(' ') << "TOKEN" << '|';
+            std::cout << std::left << std::setw(20) << std::setfill(' ') << "VALUE" << '|';
+            std::cout << std::endl;
+            std::cout << "----------------------------------------------------" <<std::endl;
+
         for(Token t : tokens){
-            std::cout << TokenNames[t.type] << "  " << t.value << std::endl;
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << t.id << '|';
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << t.line_no << '|';
+            std::cout << std::left << std::setw(5) << std::setfill(' ') << t.column_no << '|';
+            std::cout << std::left << std::setw(12) << std::setfill(' ') << TokenNames[t.type] << '|';
+            std::cout << std::left << std::setw(20) << std::setfill(' ') << t.value << '|';
+            std::cout << std::endl;
         }
     }
 
-    void begin_token(State new_state)
+    void change_state(State new_state)
     {
         current_state = new_state;
         current_lexeme += current_char;
     }
 
-    void begin_token(State new_state, bool add_to_lexeme){
+    void change_state(State new_state, bool add_to_lexeme){
         current_state = new_state;
         if(add_to_lexeme)
         {
@@ -56,27 +106,29 @@ public:
     }
 
     void complete_token(TokenType type, bool decrement){
-        Token toAdd;
-        toAdd.type = type;
-        toAdd.value =  current_lexeme;
-        toAdd.line_no = current_line;
-        current_state = State::S_START;
-        current_lexeme = "";
-
-        tokens.push_back(toAdd);
-
-        if(decrement) offset--;
+        complete_token(type, decrement, true);
     }
 
     void complete_token(TokenType type, bool decrement, bool with_value){
+        if(type == TokenType::IDENT){
+            auto kwPair = keywords.find(current_lexeme);
+            if(kwPair != keywords.end()){
+                type = kwPair->second;
+                current_lexeme="";
+            }
+        }
         Token toAdd;
         toAdd.type = type;
         toAdd.value = with_value ? current_lexeme : "";
         toAdd.line_no = current_line;
-        current_state = State::S_START;
-        current_lexeme = "";
+        toAdd.id = token_id;
+        toAdd.column_no = current_column;
 
         tokens.push_back(toAdd);
+
+        token_id++;
+        current_state = State::S_START;
+        current_lexeme = "";
 
         if(decrement) offset--;
     }
@@ -95,6 +147,7 @@ public:
             current_char = input[offset];
             lex();
             offset++;
+            current_column++;
         }
 
         print_tokens();
@@ -115,6 +168,35 @@ public:
             case State::S_OP_HIGH: lex_op_high(); break;
             case State::S_OP_LOW: lex_op_low(); break;
             case State::S_OP_EQUAL: lex_op_equal(); break;
+            case State::S_OP_DOT: lex_op_dot(); break;
+            case State::S_OP_AND: lex_op_and(); break;
+            case State::S_OP_OR: lex_op_or(); break;
+        }
+    }
+
+    void lex_op_and(){
+        switch(current_char){
+            case '&' : complete_token(TokenType::OP_LOGIC_AND, false); break;
+            default: break;//TODO: ERROR
+        }
+    }
+
+    void lex_op_or(){
+        switch(current_char){
+            case '|' : complete_token(TokenType::OP_LOGIC_OR, false); break;
+            default: break;//TODO: ERROR
+        }
+    }
+
+    void lex_op_dot(){
+        switch(current_char)
+        {
+            case 'a' ... 'z': 
+            case 'A' ... 'Z':
+            case '_' :
+                complete_token(TokenType::OP_FIELD_ACCESS, true); break;
+            case '0' ... '9':
+                change_state(State::S_LIT_FLOAT, true); break;
         }
     }
 
@@ -163,7 +245,7 @@ public:
         switch (current_char){
             case '0' ... '9': add_to_lexeme(); break;
             case '.': 
-                begin_token(State::S_LIT_FLOAT);
+                change_state(State::S_LIT_FLOAT);
                 break;
             default: complete_token(TokenType::LIT_INT, true);
         }
@@ -173,7 +255,7 @@ public:
     void lex_lit_float(){
         switch(current_char){
             case '0' ... '9': add_to_lexeme(); break;
-            case 'e' : begin_token(State::S_LIT_FLOAT_EXP_NEG); break;
+            case 'e' : change_state(State::S_LIT_FLOAT_EXP_NEG); break;
             default: complete_token(TokenType::LIT_FLOAT, true);
         }
     }
@@ -181,8 +263,8 @@ public:
     void lex_lit_float_exp_neg()
     {
         switch(current_char){
-            case '-' : begin_token(State::S_LIT_FLOAT_EXP); break;
-            default: begin_token(State::S_LIT_FLOAT_EXP); break;
+            case '-' : change_state(State::S_LIT_FLOAT_EXP); break;
+            default: change_state(State::S_LIT_FLOAT_EXP); break;
         }
     }
 
@@ -190,7 +272,7 @@ public:
         
         switch(current_char){
             case '0' ... '9': add_to_lexeme(); break;
-            case 'e' : begin_token(State::S_LIT_FLOAT_EXP_NEG); break;
+            case 'e' : change_state(State::S_LIT_FLOAT_EXP_NEG); break;
             default: complete_token(TokenType::LIT_FLOAT, true);
         }
     }
@@ -200,7 +282,7 @@ public:
         switch(current_char){
             case '\n' : //TODO: error
             case '\"' : complete_token(TokenType::LIT_STR, false); break;
-            case '\\' : begin_token(State::S_ESCAPE_CHAR, false); break;
+            case '\\' : change_state(State::S_ESCAPE_CHAR, false); break;
             default: add_to_lexeme();
         }
     }
@@ -211,7 +293,7 @@ public:
             case 't' : add_to_lexeme('\t'); break;
             default : add_to_lexeme(); break;
         }
-        begin_token(State::S_LIT_STR, false);
+        change_state(State::S_LIT_STR, false);
     }
 
     void lex_ident(){
@@ -229,23 +311,33 @@ public:
             case 'a' ... 'z': 
             case 'A' ... 'Z':
             case '_' :
-                begin_token(State::S_IDENT);
+                change_state(State::S_IDENT);
                 break;
             case '0' ... '9':
-                begin_token(State::S_LIT_INT);
+                change_state(State::S_LIT_INT);
                 break;
             case ' ': break;
-            case '\n' : current_line++; break;
-            case '+' : begin_token(State::S_OP_PLUS, false); break;
-            case '-' : begin_token(State::S_OP_MINUS, false); break;
-            case '>' : begin_token(State::S_OP_HIGH, false); break;
-            case '<' : begin_token(State::S_OP_LOW, false); break;
-            case '=' : begin_token(State::S_OP_EQUAL, false); break; 
+            case '\n' : current_line++; current_column = 1;break;
             case '.' :
-                begin_token(State::S_LIT_FLOAT);
+                change_state(State::S_OP_DOT);
                 break;
-            case '\"': begin_token(State::S_LIT_STR, false);
-
+            case '\"': change_state(State::S_LIT_STR, false);
+            case '+' : change_state(State::S_OP_PLUS, false); break;
+            case '-' : change_state(State::S_OP_MINUS, false); break;
+            case '>' : change_state(State::S_OP_HIGH, false); break;
+            case '<' : change_state(State::S_OP_LOW, false); break;
+            case '=' : change_state(State::S_OP_EQUAL, false); break;
+            case '*' : complete_token(TokenType::OP_MULT, false); break;
+            case '!' : complete_token(TokenType::OP_LOGIC_NOT, false); break;
+            case '{' : complete_token(TokenType::OP_CB_OPEN, false); break;
+            case '}' : complete_token(TokenType::OP_CB_CLOSE, false); break;
+            case '(' : complete_token(TokenType::OP_PAREN_OPEN, false); break;
+            case ')' : complete_token(TokenType::OP_PAREN_CLOSE, false); break;
+            case '[' : complete_token(TokenType::OP_SB_OPEN, false); break;
+            case ']' : complete_token(TokenType::OP_SB_CLOSE, false); break;
+            case ',' : complete_token(TokenType::OP_COMMA_SEP, false); break;
+            case ';' : complete_token(TokenType::OP_SEMICOLON_SEP, false); break;
+            
         }
     }
 
@@ -253,7 +345,7 @@ public:
 
 int main()
 {
-    std::string code_file = "cop = 5>3>=bzz<=c<2==a++";
+    std::string code_file = " if bool z = false{}\nwhile stuff 5.4e-5 false \"verry nice\"\nfloat test = 8+>=7==++c";
     Lexer lexer;
     lexer.input = code_file;
     lexer.lex_all();
