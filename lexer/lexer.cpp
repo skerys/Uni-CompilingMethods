@@ -7,12 +7,12 @@
 
 enum TokenType{
     IDENT, LIT_INT, LIT_FLOAT, LIT_STR, OP_PLUS, OP_INCREMENT, OP_MINUS, OP_DECREMENT, OP_L, OP_LE, OP_H, OP_HE, OP_ASSIGN, OP_E,
-    OP_PAREN_OPEN, OP_PAREN_CLOSE, OP_CB_OPEN, OP_CB_CLOSE, OP_SB_OPEN, OP_SB_CLOSE, OP_MULT, OP_LOGIC_AND, OP_LOGIC_OR, OP_LOGIC_NOT, OP_FIELD_ACCESS, OP_COMMA_SEP, OP_SEMICOLON_SEP,
+    OP_PAREN_OPEN, OP_PAREN_CLOSE, OP_CB_OPEN, OP_CB_CLOSE, OP_SB_OPEN, OP_SB_CLOSE, OP_MULT, OP_DIV, OP_LOGIC_AND, OP_LOGIC_OR, OP_LOGIC_NOT, OP_FIELD_ACCESS, OP_COMMA_SEP, OP_SEMICOLON_SEP,
     KW_IF, KW_ELIF, KW_ELSE, KW_WHILE, KW_FOR, KW_RETURN, KW_BREAK, KW_NEXT, KW_READ, KW_WRITE, KW_CLASS, KW_PRIVATE, KW_PUBLIC, KW_FUNC, KW_INT, KW_FLOAT, KW_BOOL, KW_STRING, KW_VOID, KW_TRUE, KW_FALSE
 };
 
 const std::string TokenNames[] = {"IDENT", "LIT_INT", "LIT_FLOAT", "LIT_STR", "OP_PLUS", "OP_INCREMENT", "OP_MINUS", "OP_DECREMENT", "OP_L", "OP_LE", "OP_H", "OP_HE", "OP_ASSIGN", "OP_E",
-                                  "OP_PAREN_OPEN", "OP_PAREN_CLOSE", "OP_CB_OPEN", "OP_CB_CLOSE", "OP_SB_OPEN", "OP_SB_CLOSE", "OP_MULT", "OP_LOGIC_AND", "OP_LOGIC_OR", "OP_LOGIC_NOT",
+                                  "OP_PAREN_OPEN", "OP_PAREN_CLOSE", "OP_CB_OPEN", "OP_CB_CLOSE", "OP_SB_OPEN", "OP_SB_CLOSE", "OP_MULT", "OP_DIV", "OP_LOGIC_AND", "OP_LOGIC_OR", "OP_LOGIC_NOT",
                                   "OP_FIELD_ACCESS", "OP_COMMA_SEP", "OP_SEMICOLON_SEP",
                                   "KW_IF", "KW_ELIF", "KW_ELSE", "KW_WHILE", "KW_FOR", "KW_RETURN", "KW_BREAK", "KW_NEXT", "KW_READ", "KW_WRITE", "KW_CLASS", "KW_PRIVATE", "KW_PUBLIC",
                                   "KW_FUNC", "KW_INT", "KW_FLOAT", "KW_BOOL", "KW_STRING", "KW_VOID", "KW_TRUE", "KW_FALSE"};
@@ -53,7 +53,8 @@ struct Token{
 };
 
 enum State{
-    S_START, S_IDENT, S_LIT_INT, S_LIT_FLOAT, S_LIT_FLOAT_EXP_NEG, S_LIT_FLOAT_EXP, S_LIT_STR, S_ESCAPE_CHAR, S_OP_PLUS, S_OP_MINUS, S_OP_LOW, S_OP_HIGH, S_OP_EQUAL, S_OP_OR, S_OP_AND, S_OP_DOT
+    S_START, S_IDENT, S_LIT_INT, S_LIT_FLOAT, S_LIT_FLOAT_EXP_NEG, S_LIT_FLOAT_EXP, S_LIT_STR, S_ESCAPE_CHAR,
+    S_OP_PLUS, S_OP_MINUS, S_OP_LOW, S_OP_HIGH, S_OP_EQUAL, S_OP_OR, S_OP_AND, S_OP_DOT, S_OP_SLASH, S_COMMENT, S_MULTILINECOMMENT, S_MULTILINECOMMENT_EXIT
 };
 
 
@@ -150,6 +151,10 @@ public:
             current_column++;
         }
 
+        current_char=' ';
+        lex();
+        
+
         print_tokens();
     }
 
@@ -171,6 +176,40 @@ public:
             case State::S_OP_DOT: lex_op_dot(); break;
             case State::S_OP_AND: lex_op_and(); break;
             case State::S_OP_OR: lex_op_or(); break;
+            case State::S_OP_SLASH: lex_op_slash(); break;
+            case State::S_COMMENT: lex_comment(); break;
+            case State::S_MULTILINECOMMENT: lex_multiline(); break;
+            case State::S_MULTILINECOMMENT_EXIT: lex_m_com_exit(); break;
+        }
+    }
+
+    void lex_op_slash(){
+        switch(current_char)
+        {
+            case '#': change_state(State::S_MULTILINECOMMENT, false);break;
+            default: complete_token(TokenType::OP_DIV, true, false);break;
+        }
+    }
+
+    void lex_comment(){
+        switch(current_char)
+        {
+            case '\n': change_state(State::S_START, false); break;
+        }
+    }
+
+    void lex_multiline(){
+        switch(current_char)
+        {
+            case '#': change_state(State::S_MULTILINECOMMENT_EXIT, false); break;
+        }
+    }
+
+    void lex_m_com_exit()
+    {
+        switch(current_char){
+            case '/': change_state(State::S_START, false); break;
+            default: change_state(State::S_MULTILINECOMMENT, false); break;
         }
     }
 
@@ -321,12 +360,14 @@ public:
             case '.' :
                 change_state(State::S_OP_DOT);
                 break;
-            case '\"': change_state(State::S_LIT_STR, false);
+            case '\"': change_state(State::S_LIT_STR, false); break;
             case '+' : change_state(State::S_OP_PLUS, false); break;
             case '-' : change_state(State::S_OP_MINUS, false); break;
             case '>' : change_state(State::S_OP_HIGH, false); break;
             case '<' : change_state(State::S_OP_LOW, false); break;
             case '=' : change_state(State::S_OP_EQUAL, false); break;
+            case '#' : change_state(State::S_COMMENT, false); break;
+            case '/' : change_state(State::S_OP_SLASH, false); break;
             case '*' : complete_token(TokenType::OP_MULT, false); break;
             case '!' : complete_token(TokenType::OP_LOGIC_NOT, false); break;
             case '{' : complete_token(TokenType::OP_CB_OPEN, false); break;
@@ -345,7 +386,7 @@ public:
 
 int main()
 {
-    std::string code_file = " if bool z = false{}\nwhile stuff 5.4e-5 false \"verry nice\"\nfloat test = 8+>=7==++c";
+    std::string code_file = " if bool z = false{}\nwhile stuff 5.4e-5 fa/#lse \"verry nice\"\nfloat test = 8+>=7==#/++c";
     Lexer lexer;
     lexer.input = code_file;
     lexer.lex_all();
