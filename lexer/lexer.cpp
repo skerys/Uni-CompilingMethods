@@ -272,6 +272,10 @@ public:
                 complete_token(TokenType::OP_FIELD_ACCESS, true); break;
             case '0' ... '9':
                 change_state(State::S_LIT_FLOAT, true); break;
+            default: printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, current_column, current_char);
+                     running = false;
+                     break;
+
         }
     }
 
