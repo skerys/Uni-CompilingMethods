@@ -30,7 +30,6 @@ digraph{
     node [shape = doublecircle, fontsize=12] else_4;
     node [shape = circle, fontsize=12] elif_3;
     node [shape = doublecircle, fontsize=12] elif_4;
-    node [shape = doublecircle, fontsize=12] F;
 
     qi->START
 
@@ -49,7 +48,7 @@ digraph{
     elif_4->IDENT[label="default"]
     
 
-    START -> IDENT [ label = "a..Z_"]
+    START -> IDENT [ label = "a..Z_(except e)"]
     START -> LIT_INT [ label = "0..9"]
     START -> OP_DOT [label = "."]
     START -> LIT_STR [label = "\""]
@@ -117,11 +116,14 @@ digraph{
     OP_AND_1 -> ERROR [label = "default"]
 
     COMMENT->COMMENT [label = "default"]
+    COMMENT->COMMENT_END[label = "\\n"]
 
     M_COMMENT->M_COMMENT_EXIT [label = "#"]
     M_COMMENT->M_COMMENT [label= "default"]
 
     M_COMMENT_EXIT->M_COMMENT[label="default"]
+    M_COMMENT_EXIT->COMMENT_END[label="/"]
+    M_COMMENT_EXIT->M_COMMENT_EXIT[label="#"]
 
     SYMBOL_SLASH -> M_COMMENT [label="#"]
     SYMBOL_SLASH -> OP_DIV[label="default"]
