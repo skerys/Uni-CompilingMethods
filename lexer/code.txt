@@ -1,0 +1,62 @@
+func int fibbo (int number)
+{
+    
+    int current = 1
+    int previous = 0
+
+    for int a = 1; i <= number; i++
+    {
+        int sumOfPrev2 = previous + current
+        previous = current
+        current = sumOfPrev2
+    }
+    write current
+    return current
+}
+
+func void main()
+{
+    int test = fibbo(5)
+
+    string[] myValues[2] = { "a value that has \" quotes \" inside", "test\\est"}
+    string input
+    read input
+
+    
+}
+
+class foo
+{
+    private int a
+    public float b = .5
+
+    public init()
+    {
+        a = b * 80
+    }
+
+    private doStuff(string[] test)
+    {
+        for int i = 0; i < 5; i++
+        {
+            write test[0]
+            if i == 3
+            {
+                break
+            }
+            else{
+                next
+            }
+        }
+    }
+}
+&&
+
+func void doStuff()
+    {
+        for int i = 0; i < 5 && foo() == true + 5; i++
+        {
+            write test[0]
+            
+        }
+    }

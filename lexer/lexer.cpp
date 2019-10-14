@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 #include <iomanip>
+#include <fstream>
+#include <cerrno>
 
 
 enum TokenType{
@@ -57,6 +59,20 @@ enum State{
     S_OP_PLUS, S_OP_MINUS, S_OP_LOW, S_OP_HIGH, S_OP_EQUAL, S_OP_OR, S_OP_AND, S_OP_DOT, S_OP_SLASH, S_COMMENT, S_MULTILINECOMMENT, S_MULTILINECOMMENT_EXIT
 };
 
+std::string get_file_contents(const char* filename){
+    std::ifstream in(filename, std::ios::in | std::ios::binary);
+    if(in){
+        std::string contents;
+        in.seekg(0, std::ios::end);
+        contents.resize(in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&contents[0], contents.size());
+        in.close();
+        return(contents);
+    }
+    throw(errno);
+}
+
 
 class Lexer{
 public:
@@ -70,6 +86,9 @@ public:
     int current_line = 1;
     int current_column = 1;
     int token_id = 0;
+    bool running = true;
+
+    int lexeme_start;
 
     std::vector<Token> tokens;
 
@@ -77,7 +96,7 @@ public:
             std::cout << std::left << std::setw(5) << std::setfill(' ') << "ID" << '|';
             std::cout << std::left << std::setw(5) << std::setfill(' ') << "LINE" << '|';
             std::cout << std::left << std::setw(5) << std::setfill(' ') << "COL" << '|';
-            std::cout << std::left << std::setw(12) << std::setfill(' ') << "TOKEN" << '|';
+            std::cout << std::left << std::setw(17) << std::setfill(' ') << "TOKEN" << '|';
             std::cout << std::left << std::setw(20) << std::setfill(' ') << "VALUE" << '|';
             std::cout << std::endl;
             std::cout << "----------------------------------------------------" <<std::endl;
@@ -86,7 +105,7 @@ public:
             std::cout << std::left << std::setw(5) << std::setfill(' ') << t.id << '|';
             std::cout << std::left << std::setw(5) << std::setfill(' ') << t.line_no << '|';
             std::cout << std::left << std::setw(5) << std::setfill(' ') << t.column_no << '|';
-            std::cout << std::left << std::setw(12) << std::setfill(' ') << TokenNames[t.type] << '|';
+            std::cout << std::left << std::setw(17) << std::setfill(' ') << TokenNames[t.type] << '|';
             std::cout << std::left << std::setw(20) << std::setfill(' ') << t.value << '|';
             std::cout << std::endl;
         }
@@ -123,7 +142,7 @@ public:
         toAdd.value = with_value ? current_lexeme : "";
         toAdd.line_no = current_line;
         toAdd.id = token_id;
-        toAdd.column_no = current_column;
+        toAdd.column_no = lexeme_start;
 
         tokens.push_back(toAdd);
 
@@ -131,7 +150,10 @@ public:
         current_state = State::S_START;
         current_lexeme = "";
 
-        if(decrement) offset--;
+        if(decrement){
+            offset--;
+            current_column--;
+        }
     }
 
     void add_to_lexeme(){
@@ -143,19 +165,20 @@ public:
     }
 
     void lex_all(){
-        std::cout<< input << std::endl;
         while(offset < input.size()){
+            if(!running) break;
             current_char = input[offset];
             lex();
             offset++;
             current_column++;
         }
 
-        current_char=' ';
-        lex();
-        
-
-        print_tokens();
+        if(running)
+        {
+            current_char=' ';
+            lex();
+            print_tokens();
+        }
     }
 
     void lex(){
@@ -216,14 +239,18 @@ public:
     void lex_op_and(){
         switch(current_char){
             case '&' : complete_token(TokenType::OP_LOGIC_AND, false); break;
-            default: break;//TODO: ERROR
+            default: printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, lexeme_start, '&');
+                     running = false;
+                     break;
         }
     }
 
     void lex_op_or(){
         switch(current_char){
             case '|' : complete_token(TokenType::OP_LOGIC_OR, false); break;
-            default: break;//TODO: ERROR
+            default: printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, lexeme_start, '|');
+                     running = false;
+                     break;
         }
     }
 
@@ -282,6 +309,12 @@ public:
 
     void lex_lit_int(){
         switch (current_char){
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
+            case '_' :
+                    printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, current_column, current_char);
+                    running = false;
+                    break;
             case '0' ... '9': add_to_lexeme(); break;
             case '.': 
                 change_state(State::S_LIT_FLOAT);
@@ -293,7 +326,16 @@ public:
 
     void lex_lit_float(){
         switch(current_char){
+            case 'a' ... 'd':
+            case 'f' ... 'z':
+            case 'A' ... 'D':
+            case 'F' ... 'Z':
+            case '_' :
+                    printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, current_column, current_char);
+                    running = false;
+                    break;
             case '0' ... '9': add_to_lexeme(); break;
+            case 'E' :
             case 'e' : change_state(State::S_LIT_FLOAT_EXP_NEG); break;
             default: complete_token(TokenType::LIT_FLOAT, true);
         }
@@ -303,15 +345,24 @@ public:
     {
         switch(current_char){
             case '-' : change_state(State::S_LIT_FLOAT_EXP); break;
-            default: change_state(State::S_LIT_FLOAT_EXP); break;
+            case '+' : change_state(State::S_LIT_FLOAT_EXP); break;
+            case '0' ... '9' : change_state(State::S_LIT_FLOAT_EXP); break;
+            default: printf("lexer error at %d:%d : unexpected character '%c', number or sign must follow exponent\n", current_line, current_column, current_char);
+                    running = false;
+                    break;
         }
     }
 
     void lex_lit_float_exp(){
         
         switch(current_char){
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
+            case '_' :
+                    printf("lexer error at %d:%d : unexpected character '%c'\n", current_line, current_column, current_char);
+                    running = false;
+                    break;
             case '0' ... '9': add_to_lexeme(); break;
-            case 'e' : change_state(State::S_LIT_FLOAT_EXP_NEG); break;
             default: complete_token(TokenType::LIT_FLOAT, true);
         }
     }
@@ -319,7 +370,10 @@ public:
     void lex_lit_str()
     {
         switch(current_char){
-            case '\n' : //TODO: error
+            case '\n' : 
+                    printf("lexer error at %d:%d : unterminated string, missing '\"'\n", current_line, current_column);
+                    running = false;
+                    break;
             case '\"' : complete_token(TokenType::LIT_STR, false); break;
             case '\\' : change_state(State::S_ESCAPE_CHAR, false); break;
             default: add_to_lexeme();
@@ -346,6 +400,7 @@ public:
     }
 
     void lex_start(){
+        lexeme_start = current_column;
         switch(current_char){
             case 'a' ... 'z': 
             case 'A' ... 'Z':
@@ -356,7 +411,7 @@ public:
                 change_state(State::S_LIT_INT);
                 break;
             case ' ': break;
-            case '\n' : current_line++; current_column = 1;break;
+            case '\n' : current_line++; current_column = 0;break;
             case '.' :
                 change_state(State::S_OP_DOT);
                 break;
@@ -368,6 +423,8 @@ public:
             case '=' : change_state(State::S_OP_EQUAL, false); break;
             case '#' : change_state(State::S_COMMENT, false); break;
             case '/' : change_state(State::S_OP_SLASH, false); break;
+            case '&' : change_state(State::S_OP_AND, false); break;
+            case '|' : change_state(State::S_OP_OR, false); break;
             case '*' : complete_token(TokenType::OP_MULT, false); break;
             case '!' : complete_token(TokenType::OP_LOGIC_NOT, false); break;
             case '{' : complete_token(TokenType::OP_CB_OPEN, false); break;
@@ -378,18 +435,22 @@ public:
             case ']' : complete_token(TokenType::OP_SB_CLOSE, false); break;
             case ',' : complete_token(TokenType::OP_COMMA_SEP, false); break;
             case ';' : complete_token(TokenType::OP_SEMICOLON_SEP, false); break;
-            
+            default: 
+                printf("lexer error at %d:%d : unrecognized character '%c'\n", current_line, lexeme_start, current_char);
+                running = false;
         }
     }
 
 };
 
-int main()
+int main(int argc, char** argv)
 {
-    std::string code_file = " if bool z = false{}\nwhile stuff 5.4e-5 fa/#lse \"verry nice\"\nfloat test = 8+>=7==#/++c";
-    Lexer lexer;
-    lexer.input = code_file;
-    lexer.lex_all();
-    
+    if(argc < 2 || argc > 3){
+        std::cout << "Usage: lexer <filename>" <<std::endl;
+    }else{
+        Lexer lexer;
+        lexer.input = get_file_contents(argv[1]);
+        lexer.lex_all();
 
+    }
 }
