@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <fstream>
 #include <cerrno>
+#include <variant>
 
 
 enum TokenType{
@@ -43,10 +44,23 @@ const std::map<std::string, TokenType> keywords = {
     {"false", TokenType::KW_FALSE}
 };
 
+struct TokenValueVisitor
+{
+    void operator()(int i) const { 
+        std::cout << i;
+    }
+    void operator()(float f) const { 
+        std::cout << f; 
+    }
+    void operator()(const std::string& s) const { 
+        std::cout << s;
+    }
+};
+
 struct Token{
     int id;
     TokenType type;
-    std::string value;
+    std::variant<int, float, std::string> value;
     int line_no;
     int column_no;
 
@@ -72,6 +86,7 @@ std::string get_file_contents(const char* filename){
     }
     throw(errno);
 }
+
 
 
 class Lexer{
@@ -106,7 +121,8 @@ public:
             std::cout << std::left << std::setw(5) << std::setfill(' ') << t.line_no << '|';
             std::cout << std::left << std::setw(5) << std::setfill(' ') << t.column_no << '|';
             std::cout << std::left << std::setw(17) << std::setfill(' ') << TokenNames[t.type] << '|';
-            std::cout << std::left << std::setw(20) << std::setfill(' ') << t.value << '|';
+            std::cout << std::left << std::setw(20) << std::setfill(' ');
+            std::visit(TokenValueVisitor{}, t.value);
             std::cout << std::endl;
         }
     }
@@ -139,7 +155,14 @@ public:
         }
         Token toAdd;
         toAdd.type = type;
-        toAdd.value = with_value ? current_lexeme : "";
+        //toAdd.value = with_value ? current_lexeme : "";
+
+        switch(type){
+            case TokenType::LIT_INT: toAdd.value = std::stoi(current_lexeme);break;
+            case TokenType::LIT_FLOAT: toAdd.value = std::stof(current_lexeme);break;
+            default: toAdd.value = with_value ? current_lexeme : ""; break;
+        }
+
         toAdd.line_no = current_line;
         toAdd.id = token_id;
         toAdd.column_no = lexeme_start;
@@ -234,6 +257,7 @@ public:
         switch(current_char)
         {
             case '#': change_state(State::S_MULTILINECOMMENT_EXIT, false); break;
+            case '\n': current_line++;
         }
     }
 
@@ -397,7 +421,11 @@ public:
         switch(current_char){
             case 'n' : add_to_lexeme('\n'); break;
             case 't' : add_to_lexeme('\t'); break;
-            default : add_to_lexeme(); break;
+            case '"' : add_to_lexeme('"'); break;
+            case '\\': add_to_lexeme('\\'); break;
+            default : printf("lexer error at %d:%d : unrecognized escape sequence '\\%c'\n", current_line, lexeme_start, current_char);
+                      running = false;
+                      break;
         }
         change_state(State::S_LIT_STR, false);
     }
@@ -448,6 +476,7 @@ public:
             case ']' : complete_token(TokenType::OP_SB_CLOSE, false); break;
             case ',' : complete_token(TokenType::OP_COMMA_SEP, false); break;
             case ';' : complete_token(TokenType::OP_SEMICOLON_SEP, false); break;
+            case '\r' :break;
             default: 
                 printf("lexer error at %d:%d : unrecognized character '%c'\n", current_line, lexeme_start, current_char);
                 running = false;

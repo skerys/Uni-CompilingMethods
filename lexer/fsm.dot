@@ -24,8 +24,30 @@ digraph{
     node [shape = circle, fontsize=12] M_COMMENT;
     node [shape = circle, fontsize=12] M_COMMENT_EXIT;
     node [shape = circle, fontsize=12] ERROR;
+    node [shape = circle, fontsize=12] else_1;
+    node [shape = circle, fontsize=12] else_2;
+    node [shape = circle, fontsize=12] else_3;
+    node [shape = doublecircle, fontsize=12] else_4;
+    node [shape = circle, fontsize=12] elif_3;
+    node [shape = doublecircle, fontsize=12] elif_4;
+    node [shape = doublecircle, fontsize=12] F;
 
     qi->START
+
+    START->else_1[label="e"]
+    else_1->else_2[label="l"]
+    else_2->else_3[label="s"]
+    else_3->else_4[label="e"]
+    else_2->elif_3[label="i"]
+    elif_3->elif_4[label="f"]
+
+    else_1->IDENT[label="default"]
+    else_2->IDENT[label="default"]
+    else_3->IDENT[label="default"]
+    else_4->IDENT[label="default"]
+    elif_3->IDENT[label="default"]
+    elif_4->IDENT[label="default"]
+    
 
     START -> IDENT [ label = "a..Z_"]
     START -> LIT_INT [ label = "0..9"]
@@ -40,17 +62,17 @@ digraph{
     START -> OP_SLASH [label = "/"]
     START -> OP_AND [label = "&"]
     START -> OP_OR [label = "|"]
-    START -> START [label = "*!{}[](),;", weight="0.5"]
+    START -> F [label = "*!{}[](),;", weight="0.5"]
 
     IDENT -> IDENT [label = "a..Z0..9_"]
-    IDENT -> START [label = "default", weight="0.5"]
+    IDENT -> F [label = "default", weight="0.5"]
 
     LIT_STR -> LIT_STR [label = "default"]
-    LIT_STR -> START [label = "\"", weight="0.5"]
+    LIT_STR -> F [label = "\"", weight="0.5"]
     LIT_STR -> ERROR [label = "\\n"]
     LIT_STR -> ESCAPE_CHAR [label = "\\"]
 
-    ESCAPE_CHAR -> STRING [label = "default"]
+    ESCAPE_CHAR -> LIT_STR [label = "default"]
 
     LIT_FLOAT -> ERROR [label="a..Z(except e and E)_"]
     LIT_FLOAT -> LIT_FLOAT [label="0..9"]
@@ -62,39 +84,45 @@ digraph{
 
     LIT_FLOAT_EXP -> ERROR [label="a..Z_"]
     LIT_FLOAT_EXP -> LIT_FLOAT_EXP [label = "0..9"]
-    LIT_FLOAT_EXP -> START [label = "default", weight="0.5"]
+    LIT_FLOAT_EXP -> F [label = "default", weight="0.5"]
 
     LIT_INT -> ERROR [label = "a..Z_"]
     LIT_INT -> LIT_INT [label ="0..9"]
     LIT_INT -> LIT_FLOAT [label="."]
-    LIT_INT -> START [label = "default", weight="0.5"]
+    LIT_INT -> F [label = "default", weight="0.5"]
 
-    OP_MINUS -> START[ weight="0.5"]
-    OP_PLUS -> START[ weight="0.5"]
-    OP_EQUAL -> START[ weight="0.5"]
-    OP_LOW -> START[ weight="0.5"]
-    OP_HIGH -> START[ weight="0.5"]
+    OP_MINUS -> F[ weight="0.5", label="default"]
+    OP_PLUS -> F[ weight="0.5", label="default"]
+    OP_EQUAL -> F[ weight="0.5", label="default"]
+    OP_LOW -> F[ weight="0.5", label="default"]
+    OP_HIGH -> F[ weight="0.5", label="default"]
 
-    OP_DOT -> START [label = "a..Z_", weight="0.5"]
+    OP_MINUS -> OP_DEC[label ="-"]
+    OP_PLUS -> OP_INC[label ="+"]
+    OP_EQUAL -> OP_E[label ="="]
+    OP_LOW -> OP_LE[label="="]
+    OP_HIGH -> OP_HE[label ="="]
+
+    OP_DOT -> F [label = "a..Z_", weight="0.5"]
     OP_DOT -> LIT_FLOAT [label ="0..9"]
     OP_DOT -> ERROR [label = "default"]
 
-    OP_OR -> START [label = "|", weight="0.5"]
+    OP_OR -> F [label = "|", weight="0.5"]
     OP_OR -> ERROR [label = "default"]
 
-    OP_AND -> START [label = "&", weight="0.5"]
+    OP_AND -> F [label = "&", weight="0.5"]
     OP_AND -> ERROR [label = "default"]
 
     COMMENT->COMMENT [label = "default"]
-    COMMENT->START [label = "\\n", weight="0.5"]
+    COMMENT->F [label = "\\n", weight="0.5"]
 
     M_COMMENT->M_COMMENT_EXIT [label = "#"]
     M_COMMENT->M_COMMENT [label= "default"]
 
-    M_COMMENT_EXIT->START [label="/", weight="0.5"]
+    M_COMMENT_EXIT->F [label="/", weight="0.5"]
     M_COMMENT_EXIT->M_COMMENT[label="default"]
 
     OP_SLASH -> M_COMMENT [label="#"]
-    OP_SLASH -> START[label="default", weight="0.5"]
+    OP_SLASH -> F[label="default", weight="0.5"]
 
 }
