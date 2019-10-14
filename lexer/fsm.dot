@@ -4,26 +4,26 @@ digraph{
     node [shape = point];qi
 
     node [shape = circle, fontsize=12] START;
-    node [shape = circle, fontsize=12] IDENT;
-    node [shape = circle, fontsize=12] LIT_INT;
-    node [shape = circle, fontsize=12] LIT_FLOAT;
+    node [shape = doublecircle, fontsize=12] IDENT;
+    node [shape = doublecircle, fontsize=12] LIT_INT;
+    node [shape = doublecircle, fontsize=12] LIT_FLOAT;
     node [shape = circle, fontsize=12] LIT_FLOAT_EXP_NEG;
-    node [shape = circle, fontsize=12] LIT_FLOAT_EXP;
-    node [shape = circle, fontsize=12] LIT_STR;
+    node [shape = doublecircle, fontsize=12] LIT_FLOAT_EXP;
+    node [shape = doublecircle, fontsize=12] LIT_STR;
     node [shape = circle, fontsize=12] ESCAPE_CHAR;
-    node [shape = circle, fontsize=12] OP_PLUS;
-    node [shape = circle, fontsize=12] OP_MINUS;
-    node [shape = circle, fontsize=12] OP_LOW;
-    node [shape = circle, fontsize=12] OP_HIGH;
-    node [shape = circle, fontsize=12] OP_EQUAL;
-    node [shape = circle, fontsize=12] OP_OR;
-    node [shape = circle, fontsize=12] OP_AND;
+    node [shape = circle, fontsize=12] SYMBOL_PLUS;
+    node [shape = circle, fontsize=12] SYMBOL_MINUS;
+    node [shape = circle, fontsize=12] SYMBOL_LOW;
+    node [shape = circle, fontsize=12] SYMBOL_HIGH;
+    node [shape = circle, fontsize=12] SYMBOL_EQUAL;
+    node [shape = circle, fontsize=12] OP_OR_1;
+    node [shape = circle, fontsize=12] OP_AND_1;
     node [shape = circle, fontsize=12] OP_DOT;
-    node [shape = circle, fontsize=12] OP_SLASH;
+    node [shape = circle, fontsize=12] SYMBOL_SLASH;
     node [shape = circle, fontsize=12] COMMENT;
     node [shape = circle, fontsize=12] M_COMMENT;
     node [shape = circle, fontsize=12] M_COMMENT_EXIT;
-    node [shape = circle, fontsize=12] ERROR;
+    node [shape = doublecircle, fontsize=12] ERROR;
     node [shape = circle, fontsize=12] else_1;
     node [shape = circle, fontsize=12] else_2;
     node [shape = circle, fontsize=12] else_3;
@@ -53,22 +53,27 @@ digraph{
     START -> LIT_INT [ label = "0..9"]
     START -> OP_DOT [label = "."]
     START -> LIT_STR [label = "\""]
-    START -> OP_PLUS [label = "+"]
-    START -> OP_MINUS [label = "-"]
-    START -> OP_LOW [label = "<"]
-    START -> OP_HIGH [label = ">"]
-    START -> OP_EQUAL [label = "="]
+    START -> SYMBOL_PLUS [label = "+"]
+    START -> SYMBOL_MINUS [label = "-"]
+    START -> SYMBOL_LOW [label = "<"]
+    START -> SYMBOL_HIGH [label = ">"]
+    START -> SYMBOL_EQUAL [label = "="]
     START -> COMMENT [label = "#"]
-    START -> OP_SLASH [label = "/"]
-    START -> OP_AND [label = "&"]
-    START -> OP_OR [label = "|"]
-    START -> F [label = "*!{}[](),;", weight="0.5"]
+    START -> SYMBOL_SLASH [label = "/"]
+    START -> OP_AND_1 [label = "&"]
+    START -> OP_OR_1 [label = "|"]
+    START -> OP_MULT [label="*"]
+    START -> OP_NEG [label="!"]
+    START -> CB_OPEN[label="{"]
+    START -> CB_CLOSE[label="}"]
+    START -> SB_OPEN[label="["]
+    START -> SB_CLOSE[label="]"]
+    START -> PAREN_OPEN[label="("]
+    START -> PAREN_CLOSE[label=")"]
 
     IDENT -> IDENT [label = "a..Z0..9_"]
-    IDENT -> F [label = "default", weight="0.5"]
 
     LIT_STR -> LIT_STR [label = "default"]
-    LIT_STR -> F [label = "\"", weight="0.5"]
     LIT_STR -> ERROR [label = "\\n"]
     LIT_STR -> ESCAPE_CHAR [label = "\\"]
 
@@ -84,45 +89,41 @@ digraph{
 
     LIT_FLOAT_EXP -> ERROR [label="a..Z_"]
     LIT_FLOAT_EXP -> LIT_FLOAT_EXP [label = "0..9"]
-    LIT_FLOAT_EXP -> F [label = "default", weight="0.5"]
 
     LIT_INT -> ERROR [label = "a..Z_"]
     LIT_INT -> LIT_INT [label ="0..9"]
     LIT_INT -> LIT_FLOAT [label="."]
-    LIT_INT -> F [label = "default", weight="0.5"]
 
-    OP_MINUS -> F[ weight="0.5", label="default"]
-    OP_PLUS -> F[ weight="0.5", label="default"]
-    OP_EQUAL -> F[ weight="0.5", label="default"]
-    OP_LOW -> F[ weight="0.5", label="default"]
-    OP_HIGH -> F[ weight="0.5", label="default"]
 
-    OP_MINUS -> OP_DEC[label ="-"]
-    OP_PLUS -> OP_INC[label ="+"]
-    OP_EQUAL -> OP_E[label ="="]
-    OP_LOW -> OP_LE[label="="]
-    OP_HIGH -> OP_HE[label ="="]
+    SYMBOL_MINUS -> OP_DEC[label ="-"]
+    SYMBOL_MINUS -> OP_MINUS[label ="default"]
+    SYMBOL_PLUS -> OP_INC[label ="+"]
+    SYMBOL_PLUS -> OP_PLUS[label ="default"]
+    SYMBOL_EQUAL -> OP_E[label ="="]
+    SYMBOL_EQUAL -> OP_ASSIGN[label ="default"]
+    SYMBOL_LOW -> OP_LE[label="="]
+    SYMBOL_LOW -> OP_L[label="default"]
+    SYMBOL_HIGH -> OP_HE[label ="="]
+    SYMBOL_HIGH -> OP_H[label="default"]
 
-    OP_DOT -> F [label = "a..Z_", weight="0.5"]
+    OP_DOT -> OP_FIELDACESS [label = "a..Z_", weight="0.5"]
     OP_DOT -> LIT_FLOAT [label ="0..9"]
     OP_DOT -> ERROR [label = "default"]
 
-    OP_OR -> F [label = "|", weight="0.5"]
-    OP_OR -> ERROR [label = "default"]
+    OP_OR_1 -> OP_OR_2 [label = "|", weight="0.5"]
+    OP_OR_1 -> ERROR [label = "default"]
 
-    OP_AND -> F [label = "&", weight="0.5"]
-    OP_AND -> ERROR [label = "default"]
+    OP_AND_1 -> OP_AND_2 [label = "&", weight="0.5"]
+    OP_AND_1 -> ERROR [label = "default"]
 
     COMMENT->COMMENT [label = "default"]
-    COMMENT->F [label = "\\n", weight="0.5"]
 
     M_COMMENT->M_COMMENT_EXIT [label = "#"]
     M_COMMENT->M_COMMENT [label= "default"]
 
-    M_COMMENT_EXIT->F [label="/", weight="0.5"]
     M_COMMENT_EXIT->M_COMMENT[label="default"]
 
-    OP_SLASH -> M_COMMENT [label="#"]
-    OP_SLASH -> F[label="default", weight="0.5"]
+    SYMBOL_SLASH -> M_COMMENT [label="#"]
+    SYMBOL_SLASH -> OP_DIV[label="default"]
 
 }
