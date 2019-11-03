@@ -1,0 +1,34 @@
+#----------------MAIN-------------------------------------
+<program>      ::= <decls>
+<decls>        ::= <decls> <decl> | <decl>
+
+<decl>         ::= <function_decl> | <class_declare>
+
+
+
+
+#------------------CLASS-------------------------------------
+
+<class_declare>       ::= "class" <identifier> "{}" | "class" <identifier> "{" <class_body> "}"
+<class_body>          ::= <class_body> <class_body_line> | <class_body_line>
+<class_body_line>     ::= <method_declare_stmt> | <member_declare_stmt>
+
+<accessibility_name>  ::= "private" | "public"
+
+<member_declare_stmt> ::= <accessibility_name> <declare_stmt>
+<method_declare_stmt> ::= <accessibility_name> <function_decl>
+
+
+#------------------FUNCTIONS----------------------------------
+
+
+#----------------PRIMARIES-----------------------------
+#----------------EXPRESSIONS---------------------------
+ 
+
+
+
+
+
+
+
