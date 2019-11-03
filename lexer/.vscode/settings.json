@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "any": "cpp",
+        "exception": "cpp",
+        "memory": "cpp"
+    }
+}
