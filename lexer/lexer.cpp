@@ -145,7 +145,7 @@ public:
             }
 
         }
-        if(running) print_tokens();
+        //if(running) print_tokens();
     }
 
     void lex(){
@@ -418,12 +418,14 @@ public:
         }
     }
 
+
 };
 
-std::vector<Token> lex_file(const char* path){
+std::vector<Token> lex_file(const char* path, bool printTokens){
     Lexer lexer;
     lexer.input = get_file_contents(path);
     lexer.lex_all();
+    if(printTokens) lexer.print_tokens();
     return lexer.tokens;
 }
 

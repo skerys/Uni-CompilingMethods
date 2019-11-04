@@ -11,9 +11,12 @@ class Node{
     }
 };
 
-class Param : Node{
+class Param : public Node{
     std::string name;
     std::string type;
+public:
+    Param(std::string _type, std::string _name) : type(_type), name(_name) {} 
+
 };
 
 
