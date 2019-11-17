@@ -7,6 +7,8 @@ enum UnaryOp{
     POSITIVE, NEGATIVE, NOT
 };
 
+
+
 enum ArithOp{
     ADD, SUB, MUL, DIV
 };
@@ -23,89 +25,181 @@ enum IncDecOp{
     INC, DEC
 };
 
-class Expr : Node{};
+class Expr : public Node{};
 
 class AssignExpr : public Expr{
-    std::unique_ptr<Expr> var;
-    std::unique_ptr<Expr> value;
+    Expr* var;
+    Expr* value;
 public:
-    AssignExpr(std::unique_ptr<Expr> _var, std::unique_ptr<Expr> _value) : var(std::move(_var)), value(std::move(_value)) {}
+    AssignExpr(Expr* _var, Expr* _value) : var(_var), value(_value) {}
+    void print_node(){
+        print_text("AssignExpr:");
+        indentLevel++;
+        print_text("var: ", false);
+        var->print_node();
+        print_text("value: ", false);
+        value->print_node();
+        indentLevel--;
+    }
 };
 
 class VarExpr : public Expr{
     std::string name;
 public:
     VarExpr(std::string _name) : name(_name){}
+    void print_node(){
+        print_text("VarExpr:");
+        indentLevel++;
+        print_text("name: " + name);
+        indentLevel--;
+    }
 };
 
 class LitExpr : public Expr{
     std::variant<std::string, int, float> lit;
 public:
     LitExpr(std::variant<std::string, int, float> _lit) : lit(_lit){}
+void print_node(){
+        print_text("LitExpr: ");
+        indentLevel++;
+        print_text("lit: ", false);
+        std::visit(TokenValueVisitor{}, lit);
+        std::cout << std::endl;
+        lastNl = true;
+        indentLevel--;
+    }
 };
 
 class ParenExpr : public Expr{
-    std::unique_ptr<Expr> inside;
+    Expr* inside;
 public:
-    ParenExpr(std::unique_ptr<Expr> _inside) : inside(std::move(_inside)) {}
+    ParenExpr(Expr* _inside) : inside(_inside) {}
+    void print_node(){
+        print_text("ParenExpr:");
+        indentLevel++;
+        print_text("inside: ", false);
+        inside->print_node();
+        indentLevel--;
+    }
 };
 
 class UnaryExpr : public Expr{
     UnaryOp op;
-    std::unique_ptr<Expr> expr;
+    Expr* expr;
 public:
-    UnaryExpr(UnaryOp _op, std::unique_ptr<Expr> _expr) : op(_op), expr(std::move(_expr)) {}
+    UnaryExpr(UnaryOp _op, Expr* _expr) : op(_op), expr(_expr) {}
+    void print_node(){
+        std::string subType;
+        switch(op){
+            case UnaryOp::NEGATIVE : subType = "NEGATIVE"; break;
+            case UnaryOp::POSITIVE : subType = "POSITIVE"; break;
+            case UnaryOp::NOT : subType = "NOT"; break;
+        }
+        print_text("UnaryExpr("+ subType +"):");
+        indentLevel++;
+        print_text("expr: ", false);
+        expr->print_node();
+        indentLevel--;
+    }
 };
 
 class ArithExpr : public Expr{
     ArithOp op;
-    std::unique_ptr<Expr> left;
-    std::unique_ptr<Expr> right;
+    Expr* left;
+    Expr* right;
 public:
-    ArithExpr(ArithOp _op, std::unique_ptr<Expr> _left, std::unique_ptr<Expr> _right) : op(_op), left(std::move(_left)), right(std::move(_right)) {}
+    ArithExpr(ArithOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    void print_node(){
+        std::string subType;
+        switch(op){
+            case ArithOp::ADD : subType = "ADD"; break;
+            case ArithOp::SUB : subType = "SUB"; break;
+            case ArithOp::MUL : subType = "MUL"; break;
+            case ArithOp::DIV : subType = "DIV"; break;
+        }
+        print_text("ArithExpr("+ subType +"):");
+        indentLevel++;
+        print_text("left: ", false);
+        left->print_node();
+        print_text("right: ", false);
+        right->print_node();
+        indentLevel--;
+    }
 };
 
 class CompareExpr : public Expr{
     CompareOp op;
-    std::unique_ptr<Expr> left;
-    std::unique_ptr<Expr> right;
+    Expr* left;
+    Expr* right;
 public:
-    CompareExpr(CompareOp _op, std::unique_ptr<Expr> _left, std::unique_ptr<Expr> _right) : op(_op), left(std::move(_left)), right(std::move(_right)) {}
+    CompareExpr(CompareOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    void print_node(){
+        std::string subType;
+        switch(op){
+            case CompareOp::E : subType = "EQUAL"; break;
+            case CompareOp::L : subType = "LOWER"; break;
+            case CompareOp::G : subType = "GREATER"; break;
+            case CompareOp::GE : subType = "GREATER_OR_E"; break;
+            case CompareOp::LE : subType = "LOWER_OR_E"; break;
+        }
+        print_text("CompareExpr("+ subType +"):");
+        indentLevel++;
+        print_text("left: ", false);
+        left->print_node();
+        print_text("right: ", false);
+        right->print_node();
+        indentLevel--;
+    }
 };
 
 class LogicExpr : public Expr{
     LogicOp op;
-    std::unique_ptr<Expr> left;
-    std::unique_ptr<Expr> right;
+    Expr* left;
+    Expr* right;
 public:
-    LogicExpr(LogicOp _op, std::unique_ptr<Expr> _left, std::unique_ptr<Expr> _right) : op(_op), left(std::move(_left)), right(std::move(_right)) {}
+    LogicExpr(LogicOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    void print_node(){
+        std::string subType;
+        switch(op){
+            case LogicOp::AND : subType = "AND"; break;
+            case LogicOp::OR : subType = "OR"; break;
+           
+        }
+        print_text("LogicExpr("+ subType +"):");
+        indentLevel++;
+        print_text("left: ", false);
+        left->print_node();
+        print_text("right: ", false);
+        right->print_node();
+        indentLevel--;
+    }
 };
 
 
 class ArraySubscriptExpr: public Expr{
-    std::unique_ptr<Expr> array; //could be a string but how would class.member[1] work then?
-    std::unique_ptr<Expr> index;
+    Expr* array; //could be a string but how would class.member[1] work then?
+    Expr* index;
 public:
-    ArraySubscriptExpr(std::unique_ptr<Expr> _array, std::unique_ptr<Expr> _index) : array(std::move(_array)), index(std::move(_index)) {}
+    ArraySubscriptExpr(Expr* _array, Expr* _index) : array(_array), index(_index) {}
 };
 
 class FnCallExpr : public Expr{
-    std::unique_ptr<Expr> toCall; //could be a string but how would class.method() work then
-    std::vector<std::unique_ptr<Expr>> callParams;
+    std::string toCall; //could be a string but how would class.method() work then
+    std::vector<Expr*> callArgs;
 public:
-    FnCallExpr(std::unique_ptr<Expr> _toCall, std::vector<std::unique_ptr<Expr>> _callParams) : toCall(std::move(_toCall)), callParams(std::move(_callParams)) {}
+    FnCallExpr(std::string _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams) {}
 };
 
 class FieldAccessExpr : public Expr{
-    std::unique_ptr<Expr> expr;
+    Expr* expr;
     std::string member;
 public:
-    FieldAccessExpr(std::unique_ptr<Expr> _expr, std::string _member) : expr(std::move(_expr)), member(_member) {}
+    FieldAccessExpr(Expr* _expr, std::string _member) : expr(_expr), member(_member) {}
 };
 
 class IncDecExpr : public Expr{
     IncDecOp op;
-    std::unique_ptr<Expr> expr;
+    std::string expr;
 public:
-    IncDecExpr(IncDecOp _op, std::unique_ptr<Expr> _expr) : op(_op), expr(std::move(_expr)) {}
+    IncDecExpr(IncDecOp _op, std::string _expr) : op(_op), expr(_expr) {}
 };

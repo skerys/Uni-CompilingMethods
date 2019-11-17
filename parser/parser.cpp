@@ -19,6 +19,7 @@ public:
         currentToken = tokens[offset];
         if(currentToken.type == type){
             offset++;
+            
             return &currentToken;
         }
         return nullptr;
@@ -28,8 +29,10 @@ public:
         currentToken = tokens[offset];
         if(currentToken.type == type){
             offset++;
+           
+            return &currentToken;
         } else{
-            std::cout << "expected " << TokenNames[type] << "; got " << TokenNames[currentToken.type] << std::endl;
+            
             running = false;
             return nullptr;
         }
@@ -40,63 +43,109 @@ public:
          return tokens[offset].type;
     }
 
+    bool peek_two(TokenType first, TokenType second){
+        return tokens[offset].type == first && tokens[offset+1].type == second;
+    }
+
     std::string parseType(){
         switch(token_type()){
             case TokenType::KW_BOOL: expect(TokenType::KW_BOOL); return "bool";
-            case TokenType::KW_FLOAT: expect(TokenType::KW_BOOL); return "float";
-            case TokenType::KW_INT: expect(TokenType::KW_BOOL); return "int";
-            case TokenType::KW_STRING: expect(TokenType::KW_BOOL); return "string";
+            case TokenType::KW_FLOAT: expect(TokenType::KW_FLOAT); return "float";
+            case TokenType::KW_INT: expect(TokenType::KW_INT); return "int";
+            case TokenType::KW_STRING: expect(TokenType::KW_STRING); return "string";
+            case TokenType::KW_VOID: expect(TokenType::KW_VOID); return "void";
             case TokenType::IDENT: return std::get<std::string>(expect(TokenType::IDENT)->value);
             }
     }
 
-    std::unique_ptr<Param> parse_param()
+    Param* parse_param()
     {
         auto retType = parseType();
         auto name = std::get<std::string>(expect(TokenType::IDENT)->value);
-        return std::make_unique<Param>(retType, name);
+        return new Param(retType, name);
     }
 
-    std::vector<std::unique_ptr<Param>> parse_params(){
-        std::vector<std::unique_ptr<Param>> params;
-
+    std::vector<Param*> parse_params(){
+        std::vector<Param*> params;
         expect(TokenType::OP_PAREN_OPEN);
+
+        TokenType typeNow = token_type();
+        if(typeNow != TokenType::IDENT && typeNow != TokenType::KW_INT && typeNow != TokenType::KW_STRING && typeNow != TokenType::KW_BOOL && typeNow != TokenType::KW_FLOAT){
+            expect(TokenType::OP_PAREN_CLOSE);
+            return params;
+        }
+
         params.push_back(parse_param());
         while(accept(TokenType::OP_COMMA_SEP) != nullptr){
             params.push_back(parse_param());
         }
+        expect(TokenType::OP_PAREN_CLOSE);
         return params;
     }
 
-    std::unique_ptr<Expr> parse_expr_priority(){
+    Expr* parse_expr_priority(){
         expect(TokenType::OP_PAREN_OPEN);
         auto expr = parse_expr();
         expect(TokenType::OP_PAREN_CLOSE);
-        return std::make_unique<ParenExpr>(expr);
+        auto p = new ParenExpr(expr);
+        return p;
     }
 
-    std::unique_ptr<Expr> parse_expr_primary(){
+    Expr* parse_expr_call(){
+        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        std::vector<Expr*> args;
+        expect(TokenType::OP_PAREN_OPEN);
+        if(currentToken.type != TokenType::OP_PAREN_CLOSE){
+            args.push_back(parse_expr());
+        }
+        while (currentToken.type != TokenType::OP_PAREN_CLOSE){
+            expect(TokenType::OP_COMMA_SEP);
+            args.push_back(parse_expr());
+        }
+        expect(TokenType::OP_PAREN_CLOSE);
+        return new FnCallExpr(name, args);
+    }
+
+    Expr* parse_expr_primary(){
+
+        if(peek_two(TokenType::IDENT, TokenType::OP_PAREN_OPEN)){
+            return parse_expr_call();
+        }
+        else if(peek_two(TokenType::IDENT, TokenType::OP_INCREMENT)){
+            std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+            expect(TokenType::OP_INCREMENT);
+            return new IncDecExpr(IncDecOp::INC, name);
+        }
+        else if(peek_two(TokenType::IDENT, TokenType::OP_DECREMENT)){
+            std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+            expect(TokenType::OP_DECREMENT);
+            return new IncDecExpr(IncDecOp::DEC, name);
+        }
+        
+
         switch(currentToken.type){
-            case TokenType::LIT_INT : return std::make_unique<LitExpr>(std::get<int>(expect(TokenType::LIT_INT)->value));
-            case TokenType::LIT_STR : return std::make_unique<LitExpr>(std::get<std::string>(expect(TokenType::LIT_STR)->value));
-            case TokenType::LIT_FLOAT : return std::make_unique<LitExpr>(std::get<float>(expect(TokenType::LIT_FLOAT)->value));
-            case TokenType::IDENT :  return std::make_unique<LitExpr>(std::get<std::string>(expect(TokenType::IDENT)->value));
+            case TokenType::LIT_INT : return new LitExpr(std::get<int>(expect(TokenType::LIT_INT)->value));
+            case TokenType::LIT_STR : return new LitExpr(std::get<std::string>(expect(TokenType::LIT_STR)->value));
+            case TokenType::LIT_FLOAT : return new LitExpr(std::get<float>(expect(TokenType::LIT_FLOAT)->value));
+            case TokenType::IDENT :  return new LitExpr(std::get<std::string>(expect(TokenType::IDENT)->value));
             case TokenType::OP_PAREN_OPEN : return parse_expr_priority();
+            default : return nullptr;
         }
     }
 
-    std::unique_ptr<Expr> parse_expr_unary()
+
+    Expr* parse_expr_unary()
     {
-        std::unique_ptr<Expr> expr = nullptr;
+        Expr* expr = nullptr;
         while(1){
             if(accept(TokenType::OP_PLUS) != nullptr){
-                expr = std::make_unique<UnaryExpr>(UnaryOp::POSITIVE, parse_expr_unary());
+                expr = new UnaryExpr(UnaryOp::POSITIVE, parse_expr_unary());
             }
             else if(accept(TokenType::OP_MINUS) != nullptr){
-                expr = std::make_unique<UnaryExpr>(UnaryOp::NEGATIVE, parse_expr_unary());
+                expr = new UnaryExpr(UnaryOp::NEGATIVE, parse_expr_unary());
             }
             else if(accept(TokenType::OP_LOGIC_NOT) != nullptr){
-                expr = std::make_unique<UnaryExpr>(UnaryOp::NOT, parse_expr_unary());
+                expr = new UnaryExpr(UnaryOp::NOT, parse_expr_unary());
             }
             else
                 if(expr != nullptr)
@@ -108,54 +157,71 @@ public:
         }
     }
 
-    std::unique_ptr<Expr> parse_expr_mult()
+    Expr* parse_expr_mult()
     {
         auto left = parse_expr_unary();
         while(1){
             if(accept(TokenType::OP_MULT) != nullptr){
-                left = std::make_unique<ArithExpr>(ArithOp::MUL, left, parse_expr_unary());
+                left = new ArithExpr(ArithOp::MUL, left, parse_expr_unary());
             }
             else if(accept(TokenType::OP_DIV) != nullptr){
-                left = std::make_unique<ArithExpr>(ArithOp::DIV, left, parse_expr_unary());
+                left = new ArithExpr(ArithOp::DIV, left, parse_expr_unary());
             }
             else
                 return left;
         }
     }
 
-    std::unique_ptr<Expr> parse_expr_add()
+    Expr* parse_expr_add()
     {
         auto left = parse_expr_mult();
         while(1){
             if(accept(TokenType::OP_PLUS) != nullptr){
-                left = std::make_unique<ArithExpr>(ArithOp::ADD, left, parse_expr_mult());
+                left = new ArithExpr(ArithOp::ADD, left, parse_expr_mult());
+
             }
             else if(accept(TokenType::OP_MINUS) != nullptr){
-                left = std::make_unique<ArithExpr>(ArithOp::SUB, left, parse_expr_mult());
+                left = new ArithExpr(ArithOp::SUB, left, parse_expr_mult());
             }
             else
                 return left;
         }
     }
 
-    std::unique_ptr<Expr> parse_expr_compare(){
+    Expr* parse_expr_compare(){
         auto left = parse_expr_add();
 
         while(1){
             if(accept(TokenType::OP_L) != nullptr){
-                left = std::make_unique<CompareExpr>(CompareOp::L, left, parse_expr_add());
+                left = new CompareExpr(CompareOp::L, left, parse_expr_add());
             }
             else if (accept(TokenType::OP_LE) != nullptr){
-                left = std::make_unique<CompareExpr>(CompareOp::LE, left, parse_expr_add());
+                left = new CompareExpr(CompareOp::LE, left, parse_expr_add());
             }
             else if (accept(TokenType::OP_H) != nullptr){
-                left = std::make_unique<CompareExpr>(CompareOp::G, left, parse_expr_add());
+                left = new CompareExpr(CompareOp::G, left, parse_expr_add());
             }
             else if (accept(TokenType::OP_HE) != nullptr){
-                left = std::make_unique<CompareExpr>(CompareOp::GE, left, parse_expr_add());
+                left = new CompareExpr(CompareOp::GE, left, parse_expr_add());
             }
             else if (accept(TokenType::OP_E) != nullptr){
-                left = std::make_unique<CompareExpr>(CompareOp::E, left, parse_expr_add());
+                left = new CompareExpr(CompareOp::E, left, parse_expr_add());
+            }
+            else
+                return left;
+        }
+    }
+
+    Expr* parse_expr_logic()
+    {
+        auto left = parse_expr_compare();
+        while(1){
+            if(accept(TokenType::OP_LOGIC_AND) != nullptr){
+                left = new LogicExpr(LogicOp::AND, left, parse_expr_compare());
+
+            }
+            else if(accept(TokenType::OP_LOGIC_OR) != nullptr){
+                left = new LogicExpr(LogicOp::OR, left, parse_expr_compare());
             }
             else
                 return left;
@@ -163,25 +229,156 @@ public:
     }
 
 
-    std::unique_ptr<Expr> parse_expr()
+    Expr* parse_expr()
     {
-        return parse_expr_compare();
+        return parse_expr_logic();
     }
 
-    std::unique_ptr<Stmt> parse_stmt_return(){
+    Stmt* parse_stmt_return(){
         expect(TokenType::KW_RETURN);
-        auto value = token_type() != TokenType::OP_NEWLINE_SEP ? parse_expr() : nullptr;
-        expect(TokenType::OP_NEWLINE_SEP);
+        //auto value = token_type() != TokenType::OP_NEWLINE_SEP ? parse_expr() : nullptr;
+       
 
-        return std::make_unique<ReturnStmt>(value); 
+        return new ReturnStmt(parse_expr());
     }
 
-    std::unique_ptr<Stmt> parse_stmt(){
-        return parse_stmt_return();
+    Stmt* parse_stmt_while()
+    {
+        expect(TokenType::KW_WHILE);
+        expect(TokenType::OP_PAREN_OPEN);
+        auto condition = parse_expr();
+        expect(TokenType::OP_PAREN_CLOSE);
+        auto body = parse_stmt_block();
+        return new WhileStmt(condition, body);
     }
 
-    std::vector<std::unique_ptr<Stmt>> parse_stmt_block(){
-        std::vector<std::unique_ptr<Stmt>> stmts;
+    Stmt* parse_stmt_for(){
+        expect(TokenType::KW_FOR);
+        auto initial = parse_stmt();
+        expect(TokenType::OP_SEMICOLON_SEP);
+        auto condition = parse_stmt();
+        expect(TokenType::OP_SEMICOLON_SEP);
+        auto final = parse_stmt();
+        auto body = parse_stmt_block();
+        return new ForStmt(initial, condition, final, body);
+    }
+
+    Stmt* parse_output_stmt(){
+        std::vector<Expr*> exprs;
+        expect(TokenType::KW_WRITE);
+
+        exprs.push_back(parse_expr());
+
+        while(1){
+            if(accept(TokenType::OP_COMMA_SEP) != nullptr){
+                exprs.push_back(parse_expr());
+            }else{
+                return new OutputStmt(exprs);
+            }
+        }
+    }
+
+    Stmt* parse_input_stmt(){
+        std::vector<std::string> idents;
+        expect(TokenType::KW_READ);
+
+        idents.push_back(std::get<std::string>(expect(TokenType::IDENT)->value));
+
+        while(1){
+            if(accept(TokenType::OP_COMMA_SEP) != nullptr){
+                idents.push_back(std::get<std::string>(expect(TokenType::IDENT)->value));
+            }else{
+                return new InputStmt(idents);
+            }
+        }
+    }
+
+    Stmt* parse_expr_stmt(){
+        return new ExprStmt(parse_expr());
+    }
+
+    Stmt* parse_stmt_elif(){
+        expect(TokenType::KW_IF);
+        std::vector<std::pair<Expr*, StmtBlock*>> elifStmts;
+
+        auto condition = parse_expr();
+        auto body = parse_stmt_block();
+        StmtBlock* elseBody = nullptr;
+
+        while(1){
+            if(accept(TokenType::KW_ELIF) != nullptr){
+                std::pair<Expr*, StmtBlock*> pair;
+                pair.first = parse_expr();
+                pair.second = parse_stmt_block();
+                elifStmts.push_back(pair);
+            }
+            else if(accept(TokenType::KW_ELSE) != nullptr){
+                elseBody = parse_stmt_block();
+            }
+            else{
+                return new IfElseStmt(condition, body, elifStmts, elseBody);
+            }
+        }
+
+    }
+
+    Stmt* parse_stmt_assign(){
+        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        expect(TokenType::OP_ASSIGN);
+        
+        if(peek_two(TokenType::IDENT, TokenType::OP_ASSIGN)){
+            return new AssignStmt(name, parse_stmt_assign());    
+        }
+
+        return new AssignStmt(name, parse_expr_stmt());
+        
+    }
+
+    Stmt* parse_stmt_declare()
+    {
+        auto type = parseType();
+        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        std::cout <<"YAY" << std::endl;
+        if(accept(TokenType::OP_ASSIGN)!= nullptr){
+            return new DeclareStmt(type, name, parse_expr());
+        }else{
+            return new DeclareStmt(type, name, nullptr);
+        }
+    }
+    Stmt* parse_stmt(){
+        //std::cout << TokenNames[token_type()] <<std::endl;
+        if(peek_two(TokenType::IDENT, TokenType::OP_ASSIGN)){
+            return parse_stmt_assign();
+        }
+
+        if(peek_two(TokenType::IDENT, TokenType::IDENT)){
+            return parse_stmt_declare();
+        }
+
+        switch(token_type()){
+            case TokenType::KW_BOOL:
+            case TokenType::KW_INT:
+            case TokenType::KW_FLOAT:
+            case TokenType::KW_STRING: return parse_stmt_declare();
+            case TokenType::KW_IF : return parse_stmt_elif();
+            case TokenType::KW_RETURN : return parse_stmt_return();
+            case TokenType::KW_WHILE : return parse_stmt_while();
+            case TokenType::KW_FOR : return parse_stmt_for();
+            case TokenType::KW_WRITE : return parse_output_stmt();
+            case TokenType::KW_READ : return parse_input_stmt();
+            case TokenType::KW_NEXT : 
+                expect(TokenType::KW_NEXT);
+                return new NextStmt();
+            case TokenType::KW_BREAK : 
+                expect(TokenType::KW_BREAK);
+                return new BreakStmt();
+            default : return parse_expr_stmt();
+        }
+        
+    }
+
+    StmtBlock* parse_stmt_block(){
+        std::vector<Stmt*> stmts;
         expect(TokenType::OP_CB_OPEN);
 
         while(1){
@@ -191,22 +388,23 @@ public:
                 stmts.push_back(parse_stmt());
             }
         }
-        return stmts;
+        return new StmtBlock(stmts);
     }
 
-    std::unique_ptr<Decl> parse_func_decl(){
+    Decl* parse_func_decl(){
         expect(TokenType::KW_FUNC);
         auto retType = parseType();
         auto name = std::get<std::string>(expect(TokenType::IDENT)->value);
         auto params = parse_params();
         auto body = parse_stmt_block();
 
-        return std::move(std::make_unique<FnDecl>(retType, name, params, body);
+        
+        return new FnDecl(retType, name, params, body);
         
 
     }
 
-    std::unique_ptr<Decl> parse_decl(){
+    Decl* parse_decl(){
         switch(currentToken.type){
             case TokenType::KW_FUNC : return parse_func_decl();
             case TokenType::KW_CLASS : //return parse_class_decl();
@@ -216,8 +414,8 @@ public:
         }
     }
 
-    void parse_program(){
-        std::unique_ptr<Program> p = std::make_unique<Program>();
+    Program* parse_program(){
+        Program* p = new Program();
 
         while(running){
             if(accept(TokenType::EOF_) != nullptr) break;
@@ -226,6 +424,7 @@ public:
                 p->addDecl(parse_decl());
             }
         }
+        return p;
     };
 };
 
@@ -237,6 +436,8 @@ int main(int argc, char** argv){
     }
     std::vector<Token> tokens = lex_file(argv[1], true);
     Parser p(tokens);
-    p.parse_program();
+    Program* prog = p.parse_program();
+    prog->print_node();
+    
 
 }
