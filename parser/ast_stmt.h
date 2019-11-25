@@ -24,21 +24,7 @@ class StmtBlock : public Node{
     }
 };  
 
-//a = b = 4
-class AssignStmt : public Stmt{
-    std::string name;
-    Stmt* stmt;
-    public:
-    AssignStmt(std::string _name, Stmt* _stmt) : name(_name), stmt(_stmt) {}
-    void print_node(){
-        print_text("AssignStmt:");
-        indentLevel++;
-        print_text("name: " + name);
-        print_text("stmt: ", false);
-        stmt->print_node();
-        indentLevel--;
-    }
-};
+
 
 class ExprStmt: public Stmt{
     Expr* expr;
@@ -54,27 +40,21 @@ class ExprStmt: public Stmt{
 };
 
 class IfElseStmt : public Stmt{
-    Expr* condition;
-    StmtBlock* body;
-    std::vector<std::pair<Expr*, StmtBlock*>> elifStmts;
+    std::vector<std::pair<Expr*, StmtBlock*>> branches;
     StmtBlock* elseBody;
 
     public:
-    IfElseStmt(Expr* _condition, StmtBlock* _body, std::vector<std::pair<Expr*, StmtBlock*>> _elifStmts, StmtBlock* _elseBody):
-    condition(_condition), body(_body), elifStmts(_elifStmts), elseBody(_elseBody) {}
+    IfElseStmt(std::vector<std::pair<Expr*, StmtBlock*>> _branches, StmtBlock* _elseBody):
+    branches(_branches), elseBody(_elseBody) {}
     void print_node(){
         print_text("IfElseStmt:");
         indentLevel++;
-        print_text("condition: ", false);
-        condition->print_node();
-        print_text("body: ", false);
-        body->print_node();
-        for(int i = 0; i < elifStmts.size(); i++){
+        for(int i = 0; i < branches.size(); i++){
             print_text("branch[" + stringulate(i) + "]: ", false);
             print_text("condition: ", false);
-            elifStmts[i].first->print_node();
+            branches[i].first->print_node();
             print_text("body: ", false);
-            elifStmts[i].second->print_node();
+            branches[i].second->print_node();
         }
         print_text("elseBody: ", false);
         elseBody->print_node();
@@ -123,12 +103,14 @@ public:
 
 class ReturnStmt : public Stmt{
     public:
+    std::string keyword;
     Expr* value;
 public:
-    ReturnStmt(Expr* _value) : value(_value) {}
+    ReturnStmt(Expr* _value, std::string _keyword) : value(_value), keyword(_keyword) {}
     void print_node(){
         print_text("ReturnStmt:");
         indentLevel++;
+        print_text("keyword: " + keyword);
         print_text("value: ", false);
         if(value != nullptr){
             value->print_node();    
@@ -139,27 +121,37 @@ public:
 
 class BreakStmt : public Stmt{
 public:
+    std::string keyword;
+    BreakStmt(std::string _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("BreakStmt:");
+        indentLevel++;
+        print_text("keyword: " + keyword);
+        indentLevel--;
     }
 };
 class NextStmt : public Stmt{
-    public:
+public:
+    std::string keyword;
+    NextStmt(std::string _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("NextStmt:");
+        indentLevel++;
+        print_text("keyword: " + keyword);
+        indentLevel--;
     }
 };
 
 class InputStmt : public Stmt{
-    std::vector<std::string> idents;
+    std::vector<VarExpr*> idents;
     public:
-    InputStmt(std::vector<std::string> _idents) : idents(_idents) {} 
+    InputStmt(std::vector<VarExpr*> _idents) : idents(_idents) {} 
 
     void print_node(){
         print_text("InputStmt:");
         indentLevel++;
         for(int i = 0; i < idents.size(); i++){
-            print_text("ident[" + stringulate(i) + "]: " + idents[i]);
+            idents[i]->print_node();
         }
         indentLevel--;
     }
@@ -182,17 +174,17 @@ class OutputStmt : public Stmt{
     }
 };
 
-class DeclareStmt : public Stmt{
-    std::string type;
-    std::string ident;
+class DeclareVarStmt : public Stmt{
+    Type* type;
+    Token ident;
     Expr* assignExpr;
     public:
-    DeclareStmt(std::string _type, std::string _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){}
+    DeclareVarStmt(Type* _type, Token _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){}
     void print_node(){
         print_text("DeclareStmt:");
         indentLevel++;
-        print_text("type: " + type);
-        print_text("ident: " + ident);
+        print_text("type: " + type->name);
+        print_text("ident: " + std::get<std::string>(ident.value));
 
         if(assignExpr != nullptr){
             print_text("assignExpr:", false);
@@ -203,8 +195,8 @@ class DeclareStmt : public Stmt{
 };
 
 class DeclareStmtArray : public Stmt{
-    std::string type;
-    std::string ident;
+    Type* type;
+    Token ident;
     Expr* sizeExpr;
     std::vector<Expr*> assignExprs;
 };

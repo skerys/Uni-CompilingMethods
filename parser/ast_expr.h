@@ -44,13 +44,13 @@ public:
 };
 
 class VarExpr : public Expr{
-    std::string name;
+    Token var;
 public:
-    VarExpr(std::string _name) : name(_name){}
+    VarExpr(Token _var) : var(_var){}
     void print_node(){
         print_text("VarExpr:");
         indentLevel++;
-        print_text("name: " + name);
+        print_text("name: " + std::get<std::string>(var.value));
         indentLevel--;
     }
 };
@@ -175,16 +175,33 @@ public:
     }
 };
 
+//a = b = 4
+class AssignExpr : public Expr{
+    Expr* left;
+    Expr* right;
+    public:
+    AssignExpr(Expr* _left, Expr* _right) : left(_left), right(_right){}
+    void print_node(){
+        print_text("AssignExpr:");
+        indentLevel++;
+        print_text("left: ", false);
+        left->print_node();
+        print_text("right: ", false);
+        right->print_node();
+        indentLevel--;
+    }
+};
+
 
 class ArraySubscriptExpr: public Expr{
-    Expr* array; //could be a string but how would class.member[1] work then?
+    Expr* array; 
     Expr* index;
 public:
     ArraySubscriptExpr(Expr* _array, Expr* _index) : array(_array), index(_index) {}
 };
 
 class FnCallExpr : public Expr{
-    std::string toCall; //could be a string but how would class.method() work then
+    std::string toCall; 
     std::vector<Expr*> callArgs;
 public:
     FnCallExpr(std::string _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams) {}

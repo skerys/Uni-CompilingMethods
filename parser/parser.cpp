@@ -47,7 +47,7 @@ public:
         return tokens[offset].type == first && tokens[offset+1].type == second;
     }
 
-    std::string parseType(){
+    Type* parseType(){
         switch(token_type()){
             case TokenType::KW_BOOL: expect(TokenType::KW_BOOL); return "bool";
             case TokenType::KW_FLOAT: expect(TokenType::KW_FLOAT); return "float";
@@ -61,7 +61,7 @@ public:
     Param* parse_param()
     {
         auto retType = parseType();
-        auto name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        auto name = expect(TokenType::IDENT);
         return new Param(retType, name);
     }
 
@@ -127,7 +127,7 @@ public:
             case TokenType::LIT_INT : return new LitExpr(std::get<int>(expect(TokenType::LIT_INT)->value));
             case TokenType::LIT_STR : return new LitExpr(std::get<std::string>(expect(TokenType::LIT_STR)->value));
             case TokenType::LIT_FLOAT : return new LitExpr(std::get<float>(expect(TokenType::LIT_FLOAT)->value));
-            case TokenType::IDENT :  return new LitExpr(std::get<std::string>(expect(TokenType::IDENT)->value));
+            case TokenType::IDENT :  return new VarExpr(expect(TokenType::IDENT));
             case TokenType::OP_PAREN_OPEN : return parse_expr_priority();
             default : return nullptr;
         }
@@ -239,7 +239,7 @@ public:
         //auto value = token_type() != TokenType::OP_NEWLINE_SEP ? parse_expr() : nullptr;
        
 
-        return new ReturnStmt(parse_expr());
+        return new ReturnStmt(parse_expr(), "return");
     }
 
     Stmt* parse_stmt_while()
@@ -301,8 +301,10 @@ public:
         expect(TokenType::KW_IF);
         std::vector<std::pair<Expr*, StmtBlock*>> elifStmts;
 
-        auto condition = parse_expr();
-        auto body = parse_stmt_block();
+        std::pair<Expr*, StmtBlock*> pair;
+        pair.first = parse_expr();
+        pair.second = parse_stmt_block();
+        elifStmts.push_back(pair);
         StmtBlock* elseBody = nullptr;
 
         while(1){
@@ -316,7 +318,7 @@ public:
                 elseBody = parse_stmt_block();
             }
             else{
-                return new IfElseStmt(condition, body, elifStmts, elseBody);
+                return new IfElseStmt(elifStmts, elseBody);
             }
         }
 
@@ -368,10 +370,10 @@ public:
             case TokenType::KW_READ : return parse_input_stmt();
             case TokenType::KW_NEXT : 
                 expect(TokenType::KW_NEXT);
-                return new NextStmt();
+                return new NextStmt("next");
             case TokenType::KW_BREAK : 
                 expect(TokenType::KW_BREAK);
-                return new BreakStmt();
+                return new BreakStmt("break");
             default : return parse_expr_stmt();
         }
         

@@ -14,7 +14,10 @@ class Decl : public Node{
 
 };
 
-
+class Type{
+public:
+    std::string name;
+};
 
 
 class ClassBodyStmt{
@@ -27,25 +30,25 @@ class ClassBody : public Node{
 };
 
 class ClassDecl: public Decl{
-    std::string name;
+    Token name;
     ClassBody* body;
 };
 
 class FnDecl : public Decl{
-    std::string name;
-    std::string returnType;
+    Token name;
+    Type* returnType;
     std::vector<Param*> params;
     StmtBlock* body;
 
 public:
-    FnDecl(std::string _returnType,
-           std::string _name, std::vector<Param*> _params, StmtBlock* _body) : returnType(_returnType), name(_name), params(_params), body(_body) {}
+    FnDecl(Type* _returnType,
+           Token _name, std::vector<Param*> _params, StmtBlock* _body) : returnType(_returnType), name(_name), params(_params), body(_body) {}
 
     void print_node(){
         print_text("FunctionDef:");
         indentLevel++;
-        print_text("returnType: " + returnType);
-        print_text("name: " + name);
+        print_text("returnType: " + returnType->name);
+        print_text("name: " + std::get<std::string>(name.value));
         for(int i = 0; i < params.size(); i++){
             print_text("param[" + stringulate(i) +"]:", false);
             params[i]->print_node();
