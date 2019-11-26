@@ -43,6 +43,43 @@ class Node{
     }
 };
 
+enum PrimitiveTypeName{
+    STRING, INT, FLOAT, BOOL, VOID
+};
+
+class Type{
+public:
+    virtual std::string get_type_name() = 0;
+};
+
+class PrimitiveType : public Type{
+public:
+    PrimitiveTypeName type;
+    PrimitiveType(PrimitiveTypeName _type) : type(_type) {}
+    std::string get_type_name(){
+        switch (type)
+        {
+        case PrimitiveTypeName::BOOL: return "bool";
+        case PrimitiveTypeName::INT : return "int";
+        case PrimitiveTypeName::FLOAT : return "float";
+        case PrimitiveTypeName::STRING : return "string";
+        case PrimitiveTypeName::VOID : return "void";
+        default : 
+            std::cout << "get_type_name error" << std::endl;
+            return NULL;
+        }
+    }
+};
+
+class CustomType : public Type{
+public:
+    Token* customIdent;
+    CustomType(Token* ident) : customIdent(ident){}
+    std::string get_type_name(){
+        return std::get<std::string>(customIdent->value);
+    }
+};
+
 class Param : public Node{
     Token* name;
     Type* type;

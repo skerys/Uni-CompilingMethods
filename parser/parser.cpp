@@ -20,7 +20,7 @@ public:
         if(currentToken.type == type){
             offset++;
             
-            return &currentToken;
+            return &tokens[offset-1];
         }
         return nullptr;
     }
@@ -29,8 +29,9 @@ public:
         currentToken = tokens[offset];
         if(currentToken.type == type){
             offset++;
-           
-            return &currentToken;
+
+            return &tokens[offset-1];
+            
         } else{
             
             running = false;
@@ -73,6 +74,10 @@ public:
             case TokenType::IDENT:
                 typePtr = new CustomType(expect(TokenType::IDENT));
                 return typePtr;
+            default:
+                std::cout << "parseType error" << std::endl;
+                running = false;
+                return nullptr;
             }
     }
 
@@ -147,7 +152,10 @@ public:
             case TokenType::LIT_FLOAT : return new LitExpr(std::get<float>(expect(TokenType::LIT_FLOAT)->value));
             case TokenType::IDENT :  return new VarExpr(expect(TokenType::IDENT));
             case TokenType::OP_PAREN_OPEN : return parse_expr_priority();
-            default : return nullptr;
+            default : 
+                printf("parser error at %d:%d : missing expression\n", currentToken.line_no, currentToken.column_no);
+                running = false;
+                return nullptr;
         }
     }
 
@@ -246,10 +254,24 @@ public:
         }
     }
 
+    Expr* parse_expr_assign(){
+        auto left = parse_expr_logic();
+        while(1){
+            if(accept(TokenType::OP_ASSIGN) != nullptr){
+                left = new AssignExpr(left, parse_expr_logic());
+            }
+            else
+            {
+                return left;
+            }
+            
+        }
+    }
+
 
     Expr* parse_expr()
     {
-        return parse_expr_logic();
+        return parse_expr_assign();
     }
 
     Stmt* parse_stmt_return(){
@@ -297,14 +319,14 @@ public:
     }
 
     Stmt* parse_input_stmt(){
-        std::vector<std::string> idents;
+        std::vector<VarExpr*> idents;
         expect(TokenType::KW_READ);
 
-        idents.push_back(std::get<std::string>(expect(TokenType::IDENT)->value));
+        idents.push_back(new VarExpr(expect(TokenType::IDENT)));
 
         while(1){
             if(accept(TokenType::OP_COMMA_SEP) != nullptr){
-                idents.push_back(std::get<std::string>(expect(TokenType::IDENT)->value));
+                idents.push_back(new VarExpr(expect(TokenType::IDENT)));
             }else{
                 return new InputStmt(idents);
             }
@@ -342,35 +364,18 @@ public:
 
     }
 
-    Stmt* parse_stmt_assign(){
-        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
-        expect(TokenType::OP_ASSIGN);
-        
-        if(peek_two(TokenType::IDENT, TokenType::OP_ASSIGN)){
-            return new AssignStmt(name, parse_stmt_assign());    
-        }
-
-        return new AssignStmt(name, parse_expr_stmt());
-        
-    }
-
     Stmt* parse_stmt_declare()
     {
         auto type = parseType();
-        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
-        std::cout <<"YAY" << std::endl;
+        auto name = expect(TokenType::IDENT);
         if(accept(TokenType::OP_ASSIGN)!= nullptr){
-            return new DeclareStmt(type, name, parse_expr());
+            return new DeclareVarStmt(type, name, parse_expr());
         }else{
-            return new DeclareStmt(type, name, nullptr);
+            return new DeclareVarStmt(type, name, nullptr);
         }
     }
     Stmt* parse_stmt(){
         //std::cout << TokenNames[token_type()] <<std::endl;
-        if(peek_two(TokenType::IDENT, TokenType::OP_ASSIGN)){
-            return parse_stmt_assign();
-        }
-
         if(peek_two(TokenType::IDENT, TokenType::IDENT)){
             return parse_stmt_declare();
         }
@@ -402,6 +407,10 @@ public:
         expect(TokenType::OP_CB_OPEN);
 
         while(1){
+            if(accept(TokenType::EOF_) != nullptr){
+                printf("parser error at %d:%d : missing closing bracket '}'\n", currentToken.line_no, currentToken.column_no);
+            }
+
             if(accept(TokenType::OP_CB_CLOSE) != nullptr){
                 break;
             }else{
@@ -414,11 +423,10 @@ public:
     Decl* parse_func_decl(){
         expect(TokenType::KW_FUNC);
         auto retType = parseType();
-        auto name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        auto name = expect(TokenType::IDENT);
         auto params = parse_params();
         auto body = parse_stmt_block();
 
-        
         return new FnDecl(retType, name, params, body);
         
 
@@ -429,8 +437,9 @@ public:
             case TokenType::KW_FUNC : return parse_func_decl();
             case TokenType::KW_CLASS : //return parse_class_decl();
             default:
-                std::cout << "expected a 'func' or 'class'" << std::endl;
+                printf("parser error at %d:%d : expected 'func' or 'class'\n", currentToken.line_no, currentToken.column_no);
                 running = false;
+                return nullptr;
         }
     }
 
@@ -457,7 +466,7 @@ int main(int argc, char** argv){
     std::vector<Token> tokens = lex_file(argv[1], true);
     Parser p(tokens);
     Program* prog = p.parse_program();
-    prog->print_node();
+    if(p.running) prog->print_node();
     
 
 }

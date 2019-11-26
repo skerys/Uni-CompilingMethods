@@ -19,7 +19,6 @@ class StmtBlock : public Node{
             print_text("statement["+stringulate(i)+"]:", false);
             statements[i]->print_node();
         }
-        std::cout << std::endl;
         indentLevel--;
     }
 };  
@@ -183,7 +182,7 @@ class DeclareVarStmt : public Stmt{
     void print_node(){
         print_text("DeclareStmt:");
         indentLevel++;
-        print_text("type: " + type->name);
+        print_text("type: " + type->get_type_name());
         print_text("ident: " + std::get<std::string>(ident->value));
 
         if(assignExpr != nullptr){
@@ -194,11 +193,6 @@ class DeclareVarStmt : public Stmt{
     }
 };
 
-class DeclareStmtArray : public Stmt{
-    Type* type;
-    Token* ident;
-    Expr* sizeExpr;
-    std::vector<Expr*> assignExprs;
-};
+//DeclareStmtArray
 
 

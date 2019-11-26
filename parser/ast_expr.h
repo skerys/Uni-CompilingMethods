@@ -27,22 +27,6 @@ enum IncDecOp{
 
 class Expr : public Node{};
 
-class AssignExpr : public Expr{
-    Expr* var;
-    Expr* value;
-public:
-    AssignExpr(Expr* _var, Expr* _value) : var(_var), value(_value) {}
-    void print_node(){
-        print_text("AssignExpr:");
-        indentLevel++;
-        print_text("var: ", false);
-        var->print_node();
-        print_text("value: ", false);
-        value->print_node();
-        indentLevel--;
-    }
-};
-
 class VarExpr : public Expr{
     Token* var;
 public:

@@ -6,58 +6,11 @@ enum AccesibilityName{
     PUBLIC, PRIVATE
 };
 
-enum PrimitiveTypeName{
-    STRING, INT, FLOAT, BOOL, VOID
-};
-
 class Decl : public Node{
 
 };
 
-class Type{
-public:
-    virtual std::string get_type_name() = 0;
-};
-
-class PrimitiveType : public Type{
-public:
-    PrimitiveTypeName type;
-    PrimitiveType(PrimitiveTypeName _type) : type(_type) {}
-    std::string get_type_name(){
-        switch (type)
-        {
-        case PrimitiveTypeName::BOOL: return "bool";
-        case PrimitiveTypeName::INT : return "int";
-        case PrimitiveTypeName::FLOAT : return "float";
-        case PrimitiveTypeName::STRING : return "string";
-        case PrimitiveTypeName::VOID : return "void";
-        }
-    }
-};
-
-class CustomType : public Type{
-public:
-    Token* customIdent;
-    CustomType(Token* ident) : customIdent(ident){}
-    std::string get_type_name(){
-        return std::get<std::string>(customIdent->value);
-    }
-};
-
-
-class ClassBodyStmt{
-    AccesibilityName access;
-    Decl* decl;
-};
-
-class ClassBody : public Node{
-    std::vector<ClassBodyStmt*> stmts;
-};
-
-class ClassDecl: public Decl{
-    Token* name;
-    ClassBody* body;
-};
+//ClassBodyStmt, ClassBody, ClassDecl
 
 class FnDecl : public Decl{
     Token* name;
@@ -101,8 +54,4 @@ class Program : public Node{
         }
         indentLevel--;
     }
-};
-
-class PrimType : public Node{
-    PrimitiveType type;
 };
