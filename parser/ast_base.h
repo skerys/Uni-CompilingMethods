@@ -44,16 +44,16 @@ class Node{
 };
 
 class Param : public Node{
-    Token name;
+    Token* name;
     Type* type;
 public:
-    Param(Type* _type, Token _name) : type(_type), name(_name) {} 
+    Param(Type* _type, Token* _name) : type(_type), name(_name) {} 
 
     void print_node(){
         print_text("Param:");
         indentLevel++;
-        print_text("type: " + type->name);
-        print_text("name: " + std::get<std::string>(name.value));
+        print_text("type: " + type->get_type_name());
+        print_text("name: " + std::get<std::string>(name->value));
 
         indentLevel--;
     }

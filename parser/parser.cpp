@@ -48,13 +48,31 @@ public:
     }
 
     Type* parseType(){
+        Type* typePtr;
         switch(token_type()){
-            case TokenType::KW_BOOL: expect(TokenType::KW_BOOL); return "bool";
-            case TokenType::KW_FLOAT: expect(TokenType::KW_FLOAT); return "float";
-            case TokenType::KW_INT: expect(TokenType::KW_INT); return "int";
-            case TokenType::KW_STRING: expect(TokenType::KW_STRING); return "string";
-            case TokenType::KW_VOID: expect(TokenType::KW_VOID); return "void";
-            case TokenType::IDENT: return std::get<std::string>(expect(TokenType::IDENT)->value);
+            case TokenType::KW_BOOL:
+                expect(TokenType::KW_BOOL);
+                typePtr = new PrimitiveType(PrimitiveTypeName::BOOL);
+                return typePtr;
+            case TokenType::KW_STRING:
+                expect(TokenType::KW_STRING);
+                typePtr = new PrimitiveType(PrimitiveTypeName::STRING);
+                return typePtr;
+            case TokenType::KW_INT:
+                expect(TokenType::KW_INT);
+                typePtr = new PrimitiveType(PrimitiveTypeName::INT);
+                return typePtr;
+            case TokenType::KW_FLOAT:
+                expect(TokenType::KW_FLOAT);
+                typePtr = new PrimitiveType(PrimitiveTypeName::FLOAT);
+                return typePtr;
+            case TokenType::KW_VOID:
+                expect(TokenType::KW_VOID);
+                typePtr = new PrimitiveType(PrimitiveTypeName::VOID);
+                return typePtr;
+            case TokenType::IDENT:
+                typePtr = new CustomType(expect(TokenType::IDENT));
+                return typePtr;
             }
     }
 

@@ -44,13 +44,13 @@ public:
 };
 
 class VarExpr : public Expr{
-    Token var;
+    Token* var;
 public:
-    VarExpr(Token _var) : var(_var){}
+    VarExpr(Token* _var) : var(_var){}
     void print_node(){
         print_text("VarExpr:");
         indentLevel++;
-        print_text("name: " + std::get<std::string>(var.value));
+        print_text("name: " + std::get<std::string>(var->value));
         indentLevel--;
     }
 };

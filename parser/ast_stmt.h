@@ -176,15 +176,15 @@ class OutputStmt : public Stmt{
 
 class DeclareVarStmt : public Stmt{
     Type* type;
-    Token ident;
+    Token* ident;
     Expr* assignExpr;
     public:
-    DeclareVarStmt(Type* _type, Token _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){}
+    DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){}
     void print_node(){
         print_text("DeclareStmt:");
         indentLevel++;
         print_text("type: " + type->name);
-        print_text("ident: " + std::get<std::string>(ident.value));
+        print_text("ident: " + std::get<std::string>(ident->value));
 
         if(assignExpr != nullptr){
             print_text("assignExpr:", false);
@@ -196,7 +196,7 @@ class DeclareVarStmt : public Stmt{
 
 class DeclareStmtArray : public Stmt{
     Type* type;
-    Token ident;
+    Token* ident;
     Expr* sizeExpr;
     std::vector<Expr*> assignExprs;
 };
