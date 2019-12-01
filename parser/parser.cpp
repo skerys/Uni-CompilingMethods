@@ -115,9 +115,12 @@ public:
     }
 
     Expr* parse_expr_call(){
-        std::string name = std::get<std::string>(expect(TokenType::IDENT)->value);
+        Token* name = expect(TokenType::IDENT);
         std::vector<Expr*> args;
         expect(TokenType::OP_PAREN_OPEN);
+        expect(TokenType::OP_PAREN_OPEN);
+        std::cout << "current id" << currentToken.id << std::endl;
+        
         if(currentToken.type != TokenType::OP_PAREN_CLOSE){
             args.push_back(parse_expr());
         }
@@ -258,7 +261,7 @@ public:
         auto left = parse_expr_logic();
         while(1){
             if(accept(TokenType::OP_ASSIGN) != nullptr){
-                left = new AssignExpr(left, parse_expr_logic());
+                left = new AssignExpr(left, parse_expr_assign());
             }
             else
             {
@@ -274,12 +277,8 @@ public:
         return parse_expr_assign();
     }
 
-    Stmt* parse_stmt_return(){
-        expect(TokenType::KW_RETURN);
-        //auto value = token_type() != TokenType::OP_NEWLINE_SEP ? parse_expr() : nullptr;
-       
-
-        return new ReturnStmt(parse_expr(), "return");
+    Stmt* parse_stmt_return(){    
+        return new ReturnStmt(parse_expr(), expect(TokenType::KW_RETURN));
     }
 
     Stmt* parse_stmt_while()
@@ -322,6 +321,10 @@ public:
         std::vector<VarExpr*> idents;
         expect(TokenType::KW_READ);
 
+        if(accept(TokenType::IDENT) == nullptr){
+            printf("parser error at %d:%d : missing variable after 'read'\n", currentToken.line_no, currentToken.column_no);
+            running = false;
+        }
         idents.push_back(new VarExpr(expect(TokenType::IDENT)));
 
         while(1){
@@ -392,11 +395,9 @@ public:
             case TokenType::KW_WRITE : return parse_output_stmt();
             case TokenType::KW_READ : return parse_input_stmt();
             case TokenType::KW_NEXT : 
-                expect(TokenType::KW_NEXT);
-                return new NextStmt("next");
+                return new NextStmt(expect(TokenType::KW_NEXT));
             case TokenType::KW_BREAK : 
-                expect(TokenType::KW_BREAK);
-                return new BreakStmt("break");
+                return new BreakStmt(expect(TokenType::KW_BREAK));
             default : return parse_expr_stmt();
         }
         

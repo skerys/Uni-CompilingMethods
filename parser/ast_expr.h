@@ -177,26 +177,23 @@ class AssignExpr : public Expr{
 };
 
 
-class ArraySubscriptExpr: public Expr{
-    Expr* array; 
-    Expr* index;
-public:
-    ArraySubscriptExpr(Expr* _array, Expr* _index) : array(_array), index(_index) {}
-};
-
 class FnCallExpr : public Expr{
-    std::string toCall; 
+    Token* toCall; 
     std::vector<Expr*> callArgs;
 public:
-    FnCallExpr(std::string _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams) {}
+    FnCallExpr(Token* _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams) {}
+    void print_node(){
+        print_text("FnCallExpr:");
+        indentLevel++;
+        print_text("toCall: " + std::get<std::string>(toCall->value), false);
+        for(int i = 0; i < callArgs.size(); i++){
+            print_text("arg[" + stringulate(i) +"]:", false);
+            callArgs[i]->print_node();
+        }
+        indentLevel--;
+    }
 };
 
-class FieldAccessExpr : public Expr{
-    Expr* expr;
-    std::string member;
-public:
-    FieldAccessExpr(Expr* _expr, std::string _member) : expr(_expr), member(_member) {}
-};
 
 class IncDecExpr : public Expr{
     IncDecOp op;

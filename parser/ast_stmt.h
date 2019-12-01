@@ -102,14 +102,14 @@ public:
 
 class ReturnStmt : public Stmt{
     public:
-    std::string keyword;
+    Token* keyword;
     Expr* value;
 public:
-    ReturnStmt(Expr* _value, std::string _keyword) : value(_value), keyword(_keyword) {}
+    ReturnStmt(Expr* _value, Token* _keyword) : value(_value), keyword(_keyword) {}
     void print_node(){
         print_text("ReturnStmt:");
         indentLevel++;
-        print_text("keyword: " + keyword);
+        print_text("keyword: " + std::get<std::string>(keyword->value));
         print_text("value: ", false);
         if(value != nullptr){
             value->print_node();    
@@ -120,23 +120,23 @@ public:
 
 class BreakStmt : public Stmt{
 public:
-    std::string keyword;
-    BreakStmt(std::string _keyword) : keyword(_keyword){}
+    Token* keyword;
+    BreakStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("BreakStmt:");
         indentLevel++;
-        print_text("keyword: " + keyword);
+        print_text("keyword: " + std::get<std::string>(keyword->value));
         indentLevel--;
     }
 };
 class NextStmt : public Stmt{
 public:
-    std::string keyword;
-    NextStmt(std::string _keyword) : keyword(_keyword){}
+    Token* keyword;
+    NextStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("NextStmt:");
         indentLevel++;
-        print_text("keyword: " + keyword);
+        print_text("keyword: " + std::get<std::string>(keyword->value));
         indentLevel--;
     }
 };

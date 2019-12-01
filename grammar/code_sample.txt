@@ -1,6 +1,6 @@
 func int test()
 {
-    if thing > 3
+    if thing >
     {
         a = 1
     }
