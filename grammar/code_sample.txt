@@ -1,18 +1,7 @@
-func int test()
+func void nop()
 {
-    if thing >
-    {
-        a = 1
-    }
-    elif thing==3
-    {
-        a = 2
-    }
-    elif thing == 2
-    {
-        a = 3
-    }
-    else{
-        a= b = 5
-    }
+}
+
+func void main(int lol)
+{
 }

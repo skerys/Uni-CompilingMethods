@@ -445,15 +445,16 @@ public:
     }
 
     Program* parse_program(){
-        Program* p = new Program();
+        std::vector<Decl*> decls;
 
         while(running){
             if(accept(TokenType::EOF_) != nullptr) break;
             
             else{
-                p->addDecl(parse_decl());
+                decls.push_back(parse_decl());
             }
         }
+        Program* p = new Program(decls);
         return p;
     };
 };
@@ -468,6 +469,7 @@ int main(int argc, char** argv){
     Parser p(tokens);
     Program* prog = p.parse_program();
     if(p.running) prog->print_node();
-    
+    Scope* rootScope = new Scope(nullptr);
+    prog->resolve_names(rootScope);
 
 }

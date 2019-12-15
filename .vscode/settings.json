@@ -48,5 +48,6 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "sstream": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
