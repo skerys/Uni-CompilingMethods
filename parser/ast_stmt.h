@@ -10,7 +10,9 @@ class StmtBlock : public Node{
     std::vector<Stmt*> statements;
 
     public:
-    StmtBlock(std::vector<Stmt*> _statements) : statements(_statements){}
+    StmtBlock(std::vector<Stmt*> _statements) : statements(_statements){
+        add_children(statements);
+    }
 
     void print_node(){
         print_text("StmtBlock:");
@@ -28,7 +30,9 @@ class StmtBlock : public Node{
 class ExprStmt: public Stmt{
     Expr* expr;
     public:
-    ExprStmt(Expr* _expr) : expr(_expr) {}
+    ExprStmt(Expr* _expr) : expr(_expr) {
+        add_children(expr);
+    }
     void print_node(){
         print_text("ExprStmt:");
         indentLevel++;
@@ -44,7 +48,13 @@ class IfElseStmt : public Stmt{
 
     public:
     IfElseStmt(std::vector<std::pair<Expr*, StmtBlock*>> _branches, StmtBlock* _elseBody):
-    branches(_branches), elseBody(_elseBody) {}
+    branches(_branches), elseBody(_elseBody) {
+        for(auto&& b : branches){
+            add_children(b.first());
+            add_children(b.second());
+        }
+        add_children(elseBody);
+    }
     void print_node(){
         print_text("IfElseStmt:");
         indentLevel++;
@@ -65,7 +75,10 @@ class WhileStmt : public Stmt{
     Expr* condition;
     StmtBlock* body;
 public:
-    WhileStmt(Expr* _condition, StmtBlock* _body) : condition(_condition), body(_body) {}
+    WhileStmt(Expr* _condition, StmtBlock* _body) : condition(_condition), body(_body) {
+        add_children(condition);
+        add_children(body);
+    }
     void print_node(){
         print_text("WhileStmt:");
         indentLevel++;
@@ -83,7 +96,12 @@ class ForStmt : public Stmt{
     Stmt* final;
     StmtBlock* body;
 public:
-    ForStmt(Stmt* _initial, Stmt* _condition, Stmt* _final, StmtBlock* _body) : initial(_initial), condition(_condition), final(_final), body(_body){}
+    ForStmt(Stmt* _initial, Stmt* _condition, Stmt* _final, StmtBlock* _body) : initial(_initial), condition(_condition), final(_final), body(_body){
+        add_children(initial);
+        add_children(condition);
+        add_children(final);
+        add_children(body);
+    }
     void print_node(){
         print_text("ForStmt:");
         indentLevel++;
@@ -105,7 +123,9 @@ class ReturnStmt : public Stmt{
     Token* keyword;
     Expr* value;
 public:
-    ReturnStmt(Expr* _value, Token* _keyword) : value(_value), keyword(_keyword) {}
+    ReturnStmt(Expr* _value, Token* _keyword) : value(_value), keyword(_keyword) {
+        add_children(value);
+    }
     void print_node(){
         print_text("ReturnStmt:");
         indentLevel++;
@@ -144,7 +164,9 @@ public:
 class InputStmt : public Stmt{
     std::vector<VarExpr*> idents;
     public:
-    InputStmt(std::vector<VarExpr*> _idents) : idents(_idents) {} 
+    InputStmt(std::vector<VarExpr*> _idents) : idents(_idents) {
+        add_children(idents);
+    } 
 
     void print_node(){
         print_text("InputStmt:");
@@ -160,7 +182,9 @@ class InputStmt : public Stmt{
 class OutputStmt : public Stmt{
     std::vector<Expr*> exprs;
     public:
-    OutputStmt(std::vector<Expr*> _exprs) : exprs(_exprs){}
+    OutputStmt(std::vector<Expr*> _exprs) : exprs(_exprs){
+        add_children(exprs);
+    }
 
     void print_node(){
         print_text("OutputStmt:");
@@ -178,7 +202,10 @@ class DeclareVarStmt : public Stmt{
     Token* ident;
     Expr* assignExpr;
     public:
-    DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){}
+    DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){
+        add_children(type);
+        add_children(assignExpr);
+    }
     void print_node(){
         print_text("DeclareStmt:");
         indentLevel++;

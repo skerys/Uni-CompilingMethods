@@ -57,7 +57,9 @@ void print_node(){
 class ParenExpr : public Expr{
     Expr* inside;
 public:
-    ParenExpr(Expr* _inside) : inside(_inside) {}
+    ParenExpr(Expr* _inside) : inside(_inside) {
+        add_children(inside);
+    }
     void print_node(){
         print_text("ParenExpr:");
         indentLevel++;
@@ -71,7 +73,9 @@ class UnaryExpr : public Expr{
     UnaryOp op;
     Expr* expr;
 public:
-    UnaryExpr(UnaryOp _op, Expr* _expr) : op(_op), expr(_expr) {}
+    UnaryExpr(UnaryOp _op, Expr* _expr) : op(_op), expr(_expr) {
+        add_children(expr);
+    }
     void print_node(){
         std::string subType;
         switch(op){
@@ -92,7 +96,11 @@ class ArithExpr : public Expr{
     Expr* left;
     Expr* right;
 public:
-    ArithExpr(ArithOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    ArithExpr(ArithOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right)
+    {
+        add_children(left);
+        add_children(right);
+    }
     void print_node(){
         std::string subType;
         switch(op){
@@ -116,7 +124,11 @@ class CompareExpr : public Expr{
     Expr* left;
     Expr* right;
 public:
-    CompareExpr(CompareOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    CompareExpr(CompareOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) 
+    {
+        add_children(left);
+        add_children(right);
+    }
     void print_node(){
         std::string subType;
         switch(op){
@@ -141,7 +153,11 @@ class LogicExpr : public Expr{
     Expr* left;
     Expr* right;
 public:
-    LogicExpr(LogicOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) {}
+    LogicExpr(LogicOp _op, Expr* _left, Expr* _right) : op(_op), left(_left), right(_right) 
+    {
+        add_children(left);
+        add_children(right);
+    }
     void print_node(){
         std::string subType;
         switch(op){
@@ -164,7 +180,11 @@ class AssignExpr : public Expr{
     Expr* left;
     Expr* right;
     public:
-    AssignExpr(Expr* _left, Expr* _right) : left(_left), right(_right){}
+    AssignExpr(Expr* _left, Expr* _right) : left(_left), right(_right)
+    {
+        add_children(left);
+        add_children(right);
+    }
     void print_node(){
         print_text("AssignExpr:");
         indentLevel++;
@@ -181,7 +201,10 @@ class FnCallExpr : public Expr{
     Token* toCall; 
     std::vector<Expr*> callArgs;
 public:
-    FnCallExpr(Token* _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams) {}
+    FnCallExpr(Token* _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams)
+    {
+        add_children(callArgs);
+    }
     void print_node(){
         print_text("FnCallExpr:");
         indentLevel++;
