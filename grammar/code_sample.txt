@@ -1,7 +1,17 @@
-func void nop()
+func void main()
 {
-}
+    while 1{
 
-func void main(int lol)
-{
+    }
+    if a == 3{
+
+    }
+    elif a > 3{
+
+    }
+
+    for int a =3; a<7; a = a+1{
+        
+    }
+    
 }

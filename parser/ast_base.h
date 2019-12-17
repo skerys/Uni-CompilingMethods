@@ -10,6 +10,8 @@ class Scope;
 
 
 static int indentLevel = 0;
+static int stackSlotIndex = 0;
+
 bool lastNl = false;
 void print_text(std::string text, bool endl){
     //std::cout.clear();
@@ -42,7 +44,7 @@ std::string stringulate(ValueType v)
 
 class Node{
     public:
-    Node* parent;
+    Node* parent = nullptr;
     virtual void print_node(){
         std::cout << "print node not implemented for type " << typeid(this).name() << std::endl;
     }
@@ -53,12 +55,16 @@ class Node{
     template<typename T, typename Enable=std::enable_if<std::is_base_of<T, Node>::value>>
     void add_children(std::vector<T*> children){
         for(auto v : children){
-            v->parent = this;
+            if(v){
+                v->parent = this;
+            }
         }
     }
     template<typename T, typename Enable=std::enable_if<std::is_base_of<T, Node>::value>>
     void add_children(T* child){
-        child->parent = this;
+        if(child){
+            child->parent = this;
+        }
     }
 
 
@@ -114,27 +120,6 @@ public:
     }
 };
 
-class Param : public Node{
-    Token* name;
-    Type* type;
-public:
-    Param(Type* _type, Token* _name) : type(_type), name(_name) {
-        add_children(type);
-    } 
-
-    void print_node(){
-        print_text("Param:");
-        indentLevel++;
-        print_text("type: " + type->get_type_name());
-        print_text("name: " + std::get<std::string>(name->value));
-
-        indentLevel--;
-    }
-
-    void resolve_names(Scope* scope){
-        
-    }
-};
 
 class Scope{
 public:
@@ -168,5 +153,29 @@ public:
     }
 };
 
+class Param : public Node{
+    Token* name;
+    Type* type;
+    int stackSlot;
+public:
+    Param(Type* _type, Token* _name) : type(_type), name(_name) {
+        add_children(type);
+    } 
+
+    void print_node(){
+        print_text("Param:");
+        indentLevel++;
+        print_text("type: " + type->get_type_name());
+        print_text("name: " + std::get<std::string>(name->value));
+
+        indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        scope->add(name, this);
+        stackSlot = stackSlotIndex;
+        stackSlotIndex++;
+    }
+};
 
 

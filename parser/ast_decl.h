@@ -3,6 +3,7 @@
 #include "ast_stmt.h"
 
 
+
 enum AccesibilityName{
     PUBLIC, PRIVATE
 };
@@ -64,7 +65,6 @@ public:
     StmtBlock* body;
     Scope* mScope;
     int numLocals;
-    int stackSlotIndex;
     FnDecl(Type* _returnType,
            Token* _name, std::vector<Param*> _params, StmtBlock* _body) : returnType(_returnType), Decl(_name), params(_params), body(_body) 
     {
@@ -87,13 +87,9 @@ public:
         indentLevel--;
     }
     void resolve_names(Scope* scope){
-        std::cout << "1" << std::endl;
         if(std::get<std::string>(name->value) == "main"){
-            std::cout << "2" << std::endl;
             Program* program = find_ancestor<Program>();
-            std::cout << "3" << std::endl;
             program->mainLabel = Label::START_LABEL;
-            std::cout << "4" << std::endl;
         }
 
         stackSlotIndex = 0;

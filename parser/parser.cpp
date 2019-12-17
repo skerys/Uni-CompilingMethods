@@ -284,20 +284,20 @@ public:
     Stmt* parse_stmt_while()
     {
         expect(TokenType::KW_WHILE);
-        expect(TokenType::OP_PAREN_OPEN);
         auto condition = parse_expr();
-        expect(TokenType::OP_PAREN_CLOSE);
         auto body = parse_stmt_block();
         return new WhileStmt(condition, body);
     }
 
     Stmt* parse_stmt_for(){
         expect(TokenType::KW_FOR);
+       
         auto initial = parse_stmt();
         expect(TokenType::OP_SEMICOLON_SEP);
         auto condition = parse_stmt();
         expect(TokenType::OP_SEMICOLON_SEP);
         auto final = parse_stmt();
+        
         auto body = parse_stmt_block();
         return new ForStmt(initial, condition, final, body);
     }
@@ -341,6 +341,7 @@ public:
     }
 
     Stmt* parse_stmt_elif(){
+        std::cout << "uno" << std::endl;
         expect(TokenType::KW_IF);
         std::vector<std::pair<Expr*, StmtBlock*>> elifStmts;
 
@@ -349,6 +350,7 @@ public:
         pair.second = parse_stmt_block();
         elifStmts.push_back(pair);
         StmtBlock* elseBody = nullptr;
+
 
         while(1){
             if(accept(TokenType::KW_ELIF) != nullptr){
@@ -364,7 +366,6 @@ public:
                 return new IfElseStmt(elifStmts, elseBody);
             }
         }
-
     }
 
     Stmt* parse_stmt_declare()

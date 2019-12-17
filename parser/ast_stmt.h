@@ -8,6 +8,7 @@ class Stmt : public Node{
 
 class StmtBlock : public Node{
     std::vector<Stmt*> statements;
+    Scope* mScope;
 
     public:
     StmtBlock(std::vector<Stmt*> _statements) : statements(_statements){
@@ -22,6 +23,13 @@ class StmtBlock : public Node{
             statements[i]->print_node();
         }
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        mScope = new Scope(scope);
+        for(auto&& s : statements){
+            s->resolve_names(mScope);
+        }
     }
 };  
 
@@ -40,6 +48,9 @@ class ExprStmt: public Stmt{
         expr->print_node();
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        expr->resolve_names(scope);
+    }
 };
 
 class IfElseStmt : public Stmt{
@@ -50,10 +61,11 @@ class IfElseStmt : public Stmt{
     IfElseStmt(std::vector<std::pair<Expr*, StmtBlock*>> _branches, StmtBlock* _elseBody):
     branches(_branches), elseBody(_elseBody) {
         for(auto&& b : branches){
-            add_children(b.first());
-            add_children(b.second());
+            add_children(b.first);
+            add_children(b.second);
         }
         add_children(elseBody);
+        //std::cout << "wow" << std::endl;
     }
     void print_node(){
         print_text("IfElseStmt:");
@@ -65,9 +77,21 @@ class IfElseStmt : public Stmt{
             print_text("body: ", false);
             branches[i].second->print_node();
         }
-        print_text("elseBody: ", false);
-        elseBody->print_node();
+        if(elseBody){
+            print_text("elseBody: ", false);
+            elseBody->print_node();
+        }
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        for(auto&& b : branches){
+            b.first->resolve_names(scope);
+            b.second->resolve_names(scope);
+        }
+        if(elseBody){
+            elseBody->resolve_names(scope);
+        }
     }
 };
 
@@ -87,6 +111,11 @@ public:
         print_text("body: ", false);
         body->print_node();
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        condition->resolve_names(scope);
+        body->resolve_names(scope);
     }
 };
 
@@ -116,6 +145,13 @@ public:
         indentLevel--;
     }
 
+    void resolve_names(Scope* scope){
+        initial->resolve_names(scope);
+        condition->resolve_names(scope);
+        final->resolve_names(scope);
+        body->resolve_names(scope);
+    }
+
 };
 
 class ReturnStmt : public Stmt{
@@ -136,10 +172,15 @@ public:
         }    
         indentLevel--;
     }
+
+    void resolve_names(Scope* scope){
+        value->resolve_names(scope);
+    }
 };
 
 class BreakStmt : public Stmt{
 public:
+    Node* targetNode = nullptr;
     Token* keyword;
     BreakStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
@@ -148,9 +189,31 @@ public:
         print_text("keyword: " + std::get<std::string>(keyword->value));
         indentLevel--;
     }
+
+    void resolve_names(Scope* scope){
+        Node* currNode = parent;
+        while(currNode){
+            if(dynamic_cast<WhileStmt*>(currNode)){
+                targetNode = currNode;
+                break;
+            }
+            else if(dynamic_cast<ForStmt*>(currNode)){
+                targetNode = currNode;
+                break;
+            }
+            else{
+                currNode = currNode->parent;
+            }
+        }
+
+        if(targetNode == nullptr){
+            printf("error: break not in while or for statement: %d:%d\n", keyword->column_no, keyword->line_no);
+        }
+    }
 };
 class NextStmt : public Stmt{
 public:
+    Node* targetNode = nullptr;
     Token* keyword;
     NextStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
@@ -158,6 +221,27 @@ public:
         indentLevel++;
         print_text("keyword: " + std::get<std::string>(keyword->value));
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        Node* currNode = parent;
+        while(currNode){
+            if(dynamic_cast<WhileStmt*>(currNode)){
+                targetNode = currNode;
+                break;
+            }
+            else if(dynamic_cast<ForStmt*>(currNode)){
+                targetNode = currNode;
+                break;
+            }
+            else{
+                currNode = currNode->parent;
+            }
+        }
+
+        if(targetNode == nullptr){
+            printf("error: next not in while or for statement: %d:%d", keyword->column_no, keyword->line_no);
+        }
     }
 };
 
