@@ -12,6 +12,7 @@ class Type;
 
 static int indentLevel = 0;
 static int stackSlotIndex = 0;
+static Token* lastToken;
 
 bool lastNl = false;
 void print_text(std::string text, bool endl){
@@ -39,6 +40,11 @@ std::string stringulate(ValueType v)
     std::ostringstream oss;
     oss << v;
     return oss.str();
+}
+
+static std::string fileName;
+void print_error(Token* token, std::string error_message){
+    printf("error in %s:%d:%d : %s", fileName.c_str(), token->line_no, token->column_no, error_message.c_str());
 }
 
 
@@ -98,7 +104,7 @@ class Node{
 };
 
 enum PrimitiveTypeName{
-    STRING, INT, FLOAT, BOOL, VOID
+    STRING, INT, FLOAT, BOOL, VOID, FUNCTION
 };
 
 class Type : public Node{
@@ -125,6 +131,7 @@ public:
         case PrimitiveTypeName::FLOAT : return "float";
         case PrimitiveTypeName::STRING : return "string";
         case PrimitiveTypeName::VOID : return "void";
+        case PrimitiveTypeName::FUNCTION : return "function";
         default : 
             std::cout << "get_type_name error" << std::endl;
             return NULL;
@@ -165,17 +172,18 @@ void unify_types(Type* type0, Type* type1, Token* token)
     }
     
     if(!(typeid(type0)==typeid(type1))){
-        //printf("error: type mismatch at %d:%d\n", token->column_no, token->line_no);
-        printf("error: type mismatch at ??:??\n");
+     
+        print_error(token, "type mismatch");
     }
     else if(prim0 && prim1){
         if(prim0->type != prim1->type){
             //printf("error: type mismatch at %d:%d expected %s, got %s\n", token->column_no, token->line_no, prim0->get_type_name().c_str(), prim1->get_type_name().c_str());
-            printf("error: type mismatch at ??:?? expected %s, got %s\n", prim0->get_type_name().c_str(), prim1->get_type_name().c_str());
+
+            print_error(token, "type mismatch, expected '" + prim0->get_type_name() + "', got '" + prim1->get_type_name()+"'\n");
         }
     }
     else{
-        printf("very bad stuff in unify_types\n");
+        printf("internal error: unify_types\n");
     }
 }
 
@@ -197,8 +205,7 @@ public:
             members[name] = node;
         }else{
             //found
-            
-            printf("duplicate variable: %s at %d:%d\n", name.c_str(), token->line_no, token->column_no);
+            print_error(token, "duplicate variable '" + name + "'\n");
         }
     }
 
@@ -212,7 +219,7 @@ public:
         if(parentScope != nullptr){
             return parentScope->resolve_name(token);
         }
-        printf("undeclared variable: %s at %d:%d\n", name.c_str(), token->line_no, token->column_no);
+        print_error(token, "undeclared variable '" + name + "'\n");
         return nullptr;
     }
 };
@@ -255,7 +262,8 @@ public:
         auto primitiveType = dynamic_cast<PrimitiveType*>(type);
         if(primitiveType != nullptr){
             if(primitiveType->type == PrimitiveTypeName::VOID){
-                printf("parameter '%s' is of type void at %d:%d", std::get<std::string>(name->value).c_str(), name->column_no, name->line_no);
+                //printf("parameter '%s' is of type void at %d:%d", std::get<std::string>(name->value).c_str(), name->line_no, name->column_no);
+                print_error(name, "parameter '" + std::get<std::string>(name->value) + "' is of type void\n");
             }
         }
         return nullptr;

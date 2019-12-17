@@ -50,7 +50,7 @@ class Program : public Node{
             fn->resolve_names(scope);
         }
         if(mainLabel == Label::NO_LABEL){
-            printf("error: no function called main found");
+            print_error(lastToken, "no 'main' found\n");
         }
     }
 
@@ -95,8 +95,26 @@ public:
     }
     void resolve_names(Scope* scope){
         if(std::get<std::string>(name->value) == "main"){
+            bool mainFollowsSig = false;
             Program* program = find_ancestor<Program>();
             program->mainLabel = Label::START_LABEL;
+            
+            auto primitiveType = dynamic_cast<PrimitiveType*>(returnType);
+            if(primitiveType){
+                if(primitiveType->type == PrimitiveTypeName::INT){
+                    if(params.size() == 1){
+                        auto primitiveParamType = dynamic_cast<PrimitiveType*>(params[0]->type);
+                        if(primitiveParamType){
+                            if(primitiveParamType->type == PrimitiveTypeName::STRING){
+                                mainFollowsSig = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if(!mainFollowsSig){
+                print_error(name, "'main' does not follow the standard signature 'func int main(string s)'\n");
+            }   
         }
 
         stackSlotIndex = 0;
@@ -134,7 +152,8 @@ Type* FnCallExpr::check_types()
         FnDecl* targetDecl;
         targetDecl = dynamic_cast<FnDecl*>(targetNode);
         if(!targetDecl){
-            printf("error: call target '%s' is not a function at %d:%d\n", std::get<std::string>(toCall->value).c_str(), toCall->column_no, toCall->line_no);
+            //printf("error: call target '%s' is not a function at %d:%d\n", std::get<std::string>(toCall->value).c_str(), toCall->line_no, toCall->column_no);
+            print_error(toCall, "call target '" + std::get<std::string>(toCall->value) + "' is not a function\n");
             return nullptr;
         }
 
@@ -144,15 +163,31 @@ Type* FnCallExpr::check_types()
         }
 
         if(argTypes.size() != paramTypes.size()){
-            printf("%d:%d error: invalid argument count, expected %d, got %d\n", paramTypes.size(), argTypes.size());
+            printf("%d:%d error: invalid argument count, expected %d, got %d\n", toCall->line_no, toCall->column_no, paramTypes.size(), argTypes.size());
+
+            print_error(toCall, "invalid argument count, expected " + stringulate(paramTypes.size()) + " got " + stringulate(argTypes.size()) + "\n");
         }
 
         int paramCount = std::min(argTypes.size(), paramTypes.size());
 
         for(int i = 0; i < paramCount; i++){
-            unify_types(paramTypes[i], argTypes[i]);
+            unify_types(paramTypes[i], argTypes[i], toCall);
         }
         return targetNode->get_type();
     }
+
+Type* VarExpr::check_types()
+{
+    if(target){
+        if(dynamic_cast<FnDecl*>(target)){
+            return new PrimitiveType(PrimitiveTypeName::FUNCTION);
+        }
+        else{
+            return target->get_type();
+        }
+    }
+    else return nullptr;
+
+}
 
 

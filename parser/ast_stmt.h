@@ -108,11 +108,13 @@ class IfElseStmt : public Stmt{
         }
     }
 
+
     Type* check_types()
     {
         auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
         for(auto&& b : branches){
-            unify_types(boolType, b.first->check_types());
+            Token* token = b.first->reference_token();
+            unify_types(boolType, b.first->check_types(), token);
             b.second->check_types();
         }
         if(elseBody){
@@ -148,7 +150,7 @@ public:
     Type* check_types()
     {
         auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
-        unify_types(boolType, condition->check_types());
+        unify_types(boolType, condition->check_types(), condition->reference_token());
         body->check_types();
         return nullptr;
     }
@@ -190,7 +192,7 @@ public:
     Type* check_types()
     {
         auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
-        unify_types(boolType, condition->check_types());
+        unify_types(boolType, condition->check_types(), condition->reference_token());
         body->check_types();
         return nullptr;
     }
@@ -230,7 +232,7 @@ public:
         if(valueType == nullptr){
             valueType = new PrimitiveType(PrimitiveTypeName::VOID);
         }
-        unify_types(retType, valueType);
+        unify_types(retType, valueType, keyword);
         return retType;
     }
 };
@@ -264,7 +266,7 @@ public:
         }
 
         if(targetNode == nullptr){
-            printf("error: break not in while or for statement: %d:%d\n", keyword->column_no, keyword->line_no);
+            print_error(keyword, "'break' not in while or for statement\n");
         }
     }
     Type* check_types()
@@ -301,7 +303,9 @@ public:
         }
 
         if(targetNode == nullptr){
-            printf("error: next not in while or for statement: %d:%d", keyword->column_no, keyword->line_no);
+            //printf("error: next not in while or for statement: %d:%d", keyword->line_no, keyword->column_no);
+
+            print_error(keyword, "'next' not in while or for statement\n");
         }
     }
     Type* check_types()

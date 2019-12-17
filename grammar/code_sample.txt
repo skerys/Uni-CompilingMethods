@@ -1,5 +1,16 @@
-func int main()
-{
-    int i
-    return i
+func int main(){
+    
+}
+
+func int foo(){
+    int a
+    while true{
+        if 5>3 {
+            b(5 + true)
+        }
+    }
+}
+
+func int bar(int a){
+
 }

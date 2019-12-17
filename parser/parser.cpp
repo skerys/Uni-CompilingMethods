@@ -134,12 +134,10 @@ public:
         Token* name = expect(TokenType::IDENT);
         std::vector<Expr*> args;
         expect(TokenType::OP_PAREN_OPEN);
-        expect(TokenType::OP_PAREN_OPEN);
-        
-        if(currentToken.type != TokenType::OP_PAREN_CLOSE){
+        if(token_type() != TokenType::OP_PAREN_CLOSE){
             args.push_back(parse_expr());
         }
-        while (currentToken.type != TokenType::OP_PAREN_CLOSE){
+        while (token_type() != TokenType::OP_PAREN_CLOSE){
             expect(TokenType::OP_COMMA_SEP);
             args.push_back(parse_expr());
         }
@@ -361,7 +359,6 @@ public:
     }
 
     Stmt* parse_stmt_elif(){
-        std::cout << "uno" << std::endl;
         expect(TokenType::KW_IF);
         std::vector<std::pair<Expr*, StmtBlock*>> elifStmts;
 
@@ -489,16 +486,19 @@ public:
 };
 
 
+
 int main(int argc, char** argv){
     if(argc != 2){
         std::cout << "usage: tm <code_path>" << std::endl;
         return 1;
     }
-
+    fileName = argv[1];
     std::vector<Token> tokens = lex_file(argv[1], true);
+    lastToken = &tokens[tokens.size()];
     Parser p(tokens);
     Program* prog = p.parse_program();
     if(p.running) prog->print_node();
+    std::cout << std::endl;
     Scope* rootScope = new Scope(nullptr);
     prog->resolve_names(rootScope);
     prog->check_types();

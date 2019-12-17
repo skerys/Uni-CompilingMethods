@@ -43,24 +43,12 @@ public:
         target = scope->resolve_name(var);
     }
 
-    Type* check_types()
+    Token* reference_token()
     {
-        /*Param* tempParam = dynamic_cast<Param*>(target);
-        DeclareVarStmt* tempDecl = dynamic_cast<DeclareVarStmt*>(target);
-        
-        if(tempParam){
-            return tempParam->type;
-        }
-        else if(tempDecl)
-        {
-            return tempDecl->type;
-        }*/
-        if(target){
-            return target->get_type();
-        }
-        else return nullptr;
-
+        return var;
     }
+
+    Type* check_types();
 };
 
 class LitExpr : public Expr{
@@ -79,6 +67,11 @@ void print_node(){
     void resolve_names(Scope* scope){
         //nothin
     }
+    Token* reference_token()
+    {
+        return litToken;
+    }
+
     Type* check_types()
     {
         switch(litToken->type){
@@ -108,6 +101,12 @@ public:
     void resolve_names(Scope* scope){
         //nothin
     }
+
+    Token* reference_token()
+    {
+        return inside->reference_token();
+    }
+
     Type* check_types()
     {
         return nullptr;
@@ -137,6 +136,12 @@ public:
     void resolve_names(Scope* scope){
         expr->resolve_names(scope);
     }
+
+    Token* reference_token()
+    {
+        return expr->reference_token();
+    }
+
     Type* check_types()
     {
         return expr->check_types();
@@ -175,16 +180,21 @@ public:
         right->resolve_names(scope);
     }
 
+    Token* reference_token()
+    {
+        return left->reference_token();
+    }
+
     Type* check_types()
     {
         auto leftType = left->check_types();
         auto rightType = right->check_types();
 
         if(leftType->is_arithmethic()) {
-            unify_types(leftType, rightType);
+            unify_types(leftType, rightType, left->reference_token());
         }
         else{
-            printf("error: these values do not support arithmethic operations\n");
+            print_error(reference_token(), "values of types '" + leftType->get_type_name() + "' and '" + rightType->get_type_name() + "' do not support arithmethic operations\n");
         }
         return leftType;
     }
@@ -222,16 +232,21 @@ public:
         right->resolve_names(scope);
     }
 
+    Token* reference_token()
+    {
+        return left->reference_token();
+    }
+
     Type* check_types()
     {
         auto leftType = left->check_types();
         auto rightType = right->check_types();
 
         if(leftType->is_comparable()) {
-            unify_types(leftType, rightType);
+            unify_types(leftType, rightType, left->reference_token());
         }
         else{
-            printf("error: these values cannot be compared\n");
+            print_error(reference_token(), "values of types '" + leftType->get_type_name() + "' and '" + rightType->get_type_name() + "' cannot be compared\n");
         }
         return new PrimitiveType(PrimitiveTypeName::BOOL);
     }
@@ -262,6 +277,12 @@ public:
         right->print_node();
         indentLevel--;
     }
+
+    Token* reference_token()
+    {
+        return left->reference_token();
+    }
+
     void resolve_names(Scope* scope){
         left->resolve_names(scope);
         right->resolve_names(scope);
@@ -272,8 +293,8 @@ public:
         auto leftType = left->check_types();
         auto rightType = right->check_types();
 
-        unify_types(boolType, leftType);
-        unify_types(boolType, rightType);
+        unify_types(boolType, leftType, left->reference_token());
+        unify_types(boolType, rightType, right->reference_token());
         return boolType;
     }
 };
@@ -303,12 +324,17 @@ class AssignExpr : public Expr{
         right->resolve_names(scope);
     }
 
+    Token* reference_token()
+    {
+        return left->reference_token();
+    }
+
     Type* check_types()
     {
         auto leftType = left->check_types();
         auto rightType = right->check_types();
 
-        unify_types(leftType, rightType);
+        unify_types(leftType, rightType, reference_token());
 
         return leftType;
     }
@@ -333,6 +359,10 @@ public:
             callArgs[i]->print_node();
         }
         indentLevel--;
+    }
+
+    Token* reference_token(){
+        return toCall;
     }
 
     void resolve_names(Scope* scope){
