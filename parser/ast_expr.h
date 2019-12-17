@@ -2,12 +2,12 @@
 
 #include "ast_base.h"
 #include <variant>
+#include <algorithm>
+
 
 enum UnaryOp{
     POSITIVE, NEGATIVE, NOT
 };
-
-
 
 enum ArithOp{
     ADD, SUB, MUL, DIV
@@ -42,23 +42,53 @@ public:
     void resolve_names(Scope* scope){
         target = scope->resolve_name(var);
     }
+
+    Type* check_types()
+    {
+        /*Param* tempParam = dynamic_cast<Param*>(target);
+        DeclareVarStmt* tempDecl = dynamic_cast<DeclareVarStmt*>(target);
+        
+        if(tempParam){
+            return tempParam->type;
+        }
+        else if(tempDecl)
+        {
+            return tempDecl->type;
+        }*/
+        if(target){
+            return target->get_type();
+        }
+        else return nullptr;
+
+    }
 };
 
 class LitExpr : public Expr{
-    std::variant<std::string, int, float> lit;
 public:
-    LitExpr(std::variant<std::string, int, float> _lit) : lit(_lit){}
+    Token* litToken;
+    LitExpr(Token* _litToken) : litToken(_litToken){}
 void print_node(){
         print_text("LitExpr: ");
         indentLevel++;
         print_text("lit: ", false);
-        std::visit(TokenValueVisitor{}, lit);
+        std::visit(TokenValueVisitor{}, litToken->value);
         std::cout << std::endl;
         lastNl = true;
         indentLevel--;
     }
     void resolve_names(Scope* scope){
         //nothin
+    }
+    Type* check_types()
+    {
+        switch(litToken->type){
+            case TokenType::KW_FALSE :
+            case TokenType::KW_TRUE : return new PrimitiveType(PrimitiveTypeName::BOOL);
+            case TokenType::LIT_INT : return new PrimitiveType(PrimitiveTypeName::INT);
+            case TokenType::LIT_STR : return new PrimitiveType(PrimitiveTypeName::STRING);
+            case TokenType::LIT_FLOAT : return new PrimitiveType(PrimitiveTypeName::FLOAT);
+        }
+        return nullptr;
     }
 };
 
@@ -77,6 +107,10 @@ public:
     }
     void resolve_names(Scope* scope){
         //nothin
+    }
+    Type* check_types()
+    {
+        return nullptr;
     }
 };
 
@@ -102,6 +136,10 @@ public:
     }
     void resolve_names(Scope* scope){
         expr->resolve_names(scope);
+    }
+    Type* check_types()
+    {
+        return expr->check_types();
     }
     
 };
@@ -136,6 +174,20 @@ public:
         left->resolve_names(scope);
         right->resolve_names(scope);
     }
+
+    Type* check_types()
+    {
+        auto leftType = left->check_types();
+        auto rightType = right->check_types();
+
+        if(leftType->is_arithmethic()) {
+            unify_types(leftType, rightType);
+        }
+        else{
+            printf("error: these values do not support arithmethic operations\n");
+        }
+        return leftType;
+    }
 };
 
 class CompareExpr : public Expr{
@@ -169,6 +221,20 @@ public:
         left->resolve_names(scope);
         right->resolve_names(scope);
     }
+
+    Type* check_types()
+    {
+        auto leftType = left->check_types();
+        auto rightType = right->check_types();
+
+        if(leftType->is_comparable()) {
+            unify_types(leftType, rightType);
+        }
+        else{
+            printf("error: these values cannot be compared\n");
+        }
+        return new PrimitiveType(PrimitiveTypeName::BOOL);
+    }
 };
 
 class LogicExpr : public Expr{
@@ -200,6 +266,16 @@ public:
         left->resolve_names(scope);
         right->resolve_names(scope);
     }
+    Type* check_types()
+    {
+        auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
+        auto leftType = left->check_types();
+        auto rightType = right->check_types();
+
+        unify_types(boolType, leftType);
+        unify_types(boolType, rightType);
+        return boolType;
+    }
 };
 
 //a = b = 4
@@ -225,6 +301,16 @@ class AssignExpr : public Expr{
     void resolve_names(Scope* scope){
         left->resolve_names(scope);
         right->resolve_names(scope);
+    }
+
+    Type* check_types()
+    {
+        auto leftType = left->check_types();
+        auto rightType = right->check_types();
+
+        unify_types(leftType, rightType);
+
+        return leftType;
     }
 };
 
@@ -255,6 +341,9 @@ public:
             a->resolve_names(scope);
         }
     }
+
+    Type* check_types();
+
 };
 
 

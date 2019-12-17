@@ -7,6 +7,7 @@
 #include <sstream>
 
 class Scope;
+class Type;
 
 
 static int indentLevel = 0;
@@ -41,7 +42,6 @@ std::string stringulate(ValueType v)
 }
 
 
-
 class Node{
     public:
     Node* parent = nullptr;
@@ -50,6 +50,20 @@ class Node{
     }
     virtual void resolve_names(Scope* scope){
         std::cout << "resolve name not implemented for type " << typeid(this).name() << std::endl;
+    }
+    virtual Token* reference_token(){
+         std::cout << "reference token not implemented for type " << typeid(this).name() << std::endl;
+         return nullptr;
+    }
+
+    virtual Type* get_type(){
+        return nullptr;
+    }
+
+    virtual Type* check_types()
+    {
+        std::cout << "check type not implemented for type " << typeid(this).name() << std::endl;
+        return nullptr;
     }
 
     template<typename T, typename Enable=std::enable_if<std::is_base_of<T, Node>::value>>
@@ -90,6 +104,13 @@ enum PrimitiveTypeName{
 class Type : public Node{
 public:
     virtual std::string get_type_name() = 0;
+
+    virtual bool is_comparable(){return false;};
+    virtual bool is_arithmethic(){return false;}
+
+    Type* get_type(){
+        return this;
+    }
 };
 
 class PrimitiveType : public Type{
@@ -109,6 +130,16 @@ public:
             return NULL;
         }
     }
+
+    bool is_comparable()
+    {
+        return type == PrimitiveTypeName::BOOL || type == PrimitiveTypeName::INT || type == PrimitiveTypeName::FLOAT;
+    }
+
+    bool is_arithmetic()
+    {
+        return type == PrimitiveTypeName::INT || type == PrimitiveTypeName::FLOAT;
+    }
 };
 
 class CustomType : public Type{
@@ -120,6 +151,38 @@ public:
     }
 };
 
+
+void unify_types(Type* type0, Type* type1, Token* token)
+{
+    PrimitiveType* prim0;
+    PrimitiveType* prim1;
+    if(type0 == nullptr || type1 == nullptr){
+        return;
+    }
+    else{
+        prim0 = dynamic_cast<PrimitiveType*>(type0);
+        prim1 = dynamic_cast<PrimitiveType*>(type1);
+    }
+    
+    if(!(typeid(type0)==typeid(type1))){
+        //printf("error: type mismatch at %d:%d\n", token->column_no, token->line_no);
+        printf("error: type mismatch at ??:??\n");
+    }
+    else if(prim0 && prim1){
+        if(prim0->type != prim1->type){
+            //printf("error: type mismatch at %d:%d expected %s, got %s\n", token->column_no, token->line_no, prim0->get_type_name().c_str(), prim1->get_type_name().c_str());
+            printf("error: type mismatch at ??:?? expected %s, got %s\n", prim0->get_type_name().c_str(), prim1->get_type_name().c_str());
+        }
+    }
+    else{
+        printf("very bad stuff in unify_types\n");
+    }
+}
+
+//temporary
+void unify_types(Type* type0, Type* type1){
+    unify_types(type0, type1, nullptr);
+}
 
 class Scope{
 public:
@@ -156,9 +219,9 @@ public:
 
 class Param : public Node{
     Token* name;
-    Type* type;
     int stackSlot;
 public:
+    Type* type;
     Param(Type* _type, Token* _name) : type(_type), name(_name) {
         add_children(type);
     } 
@@ -176,6 +239,26 @@ public:
         scope->add(name, this);
         stackSlot = stackSlotIndex;
         stackSlotIndex++;
+    }
+
+    Token* reference_token(){
+        return name;
+    }
+
+    Type* get_type()
+    {
+        return type;
+    }
+
+    Type* check_types()
+    {
+        auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+        if(primitiveType != nullptr){
+            if(primitiveType->type == PrimitiveTypeName::VOID){
+                printf("parameter '%s' is of type void at %d:%d", std::get<std::string>(name->value).c_str(), name->column_no, name->line_no);
+            }
+        }
+        return nullptr;
     }
 };
 

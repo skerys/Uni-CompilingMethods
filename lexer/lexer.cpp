@@ -95,6 +95,8 @@ public:
         switch(type){
             case TokenType::LIT_INT: toAdd.value = std::stoi(current_lexeme);break;
             case TokenType::LIT_FLOAT: toAdd.value = std::stof(current_lexeme);break;
+            case TokenType::KW_TRUE: toAdd.value = true;break;
+            case TokenType::KW_FALSE: toAdd.value = false;break;
             default: toAdd.value = with_value ? current_lexeme : ""; break;
         }
 
@@ -387,7 +389,7 @@ public:
                 change_state(State::S_LIT_INT);
                 break;
             case ' ': break;
-            case '\n' : current_line++; current_column = 0;break;
+            case '\n' : current_line++; current_column = 0;complete_token(TokenType::NEWLINE, false);break;
             case '.' :
                 change_state(State::S_OP_DOT);
                 break;

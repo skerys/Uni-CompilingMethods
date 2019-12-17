@@ -2,6 +2,8 @@
 
 #include "ast_expr.h"
 
+class FnDecl;
+
 class Stmt : public Node{
     public:
 };
@@ -31,6 +33,14 @@ class StmtBlock : public Node{
             s->resolve_names(mScope);
         }
     }
+
+    Type* check_types()
+    {
+        for(auto&& s : statements){
+            s->check_types();
+        }
+        return nullptr;
+    }
 };  
 
 
@@ -50,6 +60,10 @@ class ExprStmt: public Stmt{
     }
     void resolve_names(Scope* scope){
         expr->resolve_names(scope);
+    }
+    Type* check_types()
+    {
+        return expr->check_types();
     }
 };
 
@@ -93,6 +107,19 @@ class IfElseStmt : public Stmt{
             elseBody->resolve_names(scope);
         }
     }
+
+    Type* check_types()
+    {
+        auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
+        for(auto&& b : branches){
+            unify_types(boolType, b.first->check_types());
+            b.second->check_types();
+        }
+        if(elseBody){
+            elseBody->check_types();
+        }
+        return nullptr;
+    }
 };
 
 class WhileStmt : public Stmt{
@@ -116,6 +143,14 @@ public:
     void resolve_names(Scope* scope){
         condition->resolve_names(scope);
         body->resolve_names(scope);
+    }
+
+    Type* check_types()
+    {
+        auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
+        unify_types(boolType, condition->check_types());
+        body->check_types();
+        return nullptr;
     }
 };
 
@@ -152,6 +187,14 @@ public:
         body->resolve_names(scope);
     }
 
+    Type* check_types()
+    {
+        auto boolType = new PrimitiveType(PrimitiveTypeName::BOOL);
+        unify_types(boolType, condition->check_types());
+        body->check_types();
+        return nullptr;
+    }
+
 };
 
 class ReturnStmt : public Stmt{
@@ -160,7 +203,7 @@ class ReturnStmt : public Stmt{
     Expr* value;
 public:
     ReturnStmt(Expr* _value, Token* _keyword) : value(_value), keyword(_keyword) {
-        add_children(value);
+        if(value) add_children(value);
     }
     void print_node(){
         print_text("ReturnStmt:");
@@ -174,7 +217,21 @@ public:
     }
 
     void resolve_names(Scope* scope){
-        value->resolve_names(scope);
+        if(value) value->resolve_names(scope);
+    }
+
+    Type* check_types()
+    {
+        Type* retType = ((Node*)find_ancestor<FnDecl>())->get_type();
+        Type* valueType = nullptr;
+        if(value != nullptr){
+            valueType = value->check_types();
+        }
+        if(valueType == nullptr){
+            valueType = new PrimitiveType(PrimitiveTypeName::VOID);
+        }
+        unify_types(retType, valueType);
+        return retType;
     }
 };
 
@@ -210,6 +267,10 @@ public:
             printf("error: break not in while or for statement: %d:%d\n", keyword->column_no, keyword->line_no);
         }
     }
+    Type* check_types()
+    {
+        return nullptr;
+    }
 };
 class NextStmt : public Stmt{
 public:
@@ -243,6 +304,10 @@ public:
             printf("error: next not in while or for statement: %d:%d", keyword->column_no, keyword->line_no);
         }
     }
+    Type* check_types()
+    {
+        return nullptr;
+    }
 };
 
 class InputStmt : public Stmt{
@@ -265,6 +330,10 @@ class InputStmt : public Stmt{
         for(auto&& i : idents){
             i->resolve_names(scope);
         }
+    }
+    Type* check_types()
+    {
+        return nullptr;
     }
 
 };
@@ -291,14 +360,18 @@ class OutputStmt : public Stmt{
             e->resolve_names(scope);
         }
     }
+    Type* check_types()
+    {
+        return nullptr;
+    }
 };
 
 class DeclareVarStmt : public Stmt{
-    Type* type;
     Token* ident;
     Expr* assignExpr;
     int stackSlot;
     public:
+    Type* type;
     DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){
         add_children(type);
         add_children(assignExpr);
@@ -320,6 +393,20 @@ class DeclareVarStmt : public Stmt{
         scope->add(ident, this);
         stackSlot = stackSlotIndex;
         stackSlotIndex++;
+    }
+    Type* get_type()
+    {
+        return type;
+    }
+
+    Type* check_types()
+    {
+        if(assignExpr != nullptr)
+        {
+            auto valueType = assignExpr->check_types();
+            unify_types(type, valueType, ident);
+        }
+        return nullptr;
     }
 };
 

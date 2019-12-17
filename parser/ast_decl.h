@@ -53,6 +53,13 @@ class Program : public Node{
             printf("error: no function called main found");
         }
     }
+
+    Type* check_types(){
+        for(auto&& fn : decls){
+            fn->check_types();
+        }
+        return nullptr;
+    }
 };
 
 //ClassBodyStmt, ClassBody, ClassDecl
@@ -100,6 +107,52 @@ public:
         body->resolve_names(mScope);
         numLocals = stackSlotIndex;
     }
+
+    Type* get_type()
+    {
+        return returnType;
+    }
+
+    Type* check_types(){
+        for(auto&& p : params){
+            p->check_types();
+        }
+        body->check_types();
+        return nullptr;
+    }
 };
+
+Type* FnCallExpr::check_types()
+    {
+        std::vector<Type*> argTypes;
+        for(auto&& a : callArgs){
+            argTypes.push_back(a->check_types());
+        }
+        if(targetNode == nullptr){
+            return nullptr;
+        }
+        FnDecl* targetDecl;
+        targetDecl = dynamic_cast<FnDecl*>(targetNode);
+        if(!targetDecl){
+            printf("error: call target '%s' is not a function at %d:%d\n", std::get<std::string>(toCall->value).c_str(), toCall->column_no, toCall->line_no);
+            return nullptr;
+        }
+
+        std::vector<Type*> paramTypes;
+        for(auto&& p : targetDecl->params){
+            paramTypes.push_back(p->get_type());
+        }
+
+        if(argTypes.size() != paramTypes.size()){
+            printf("%d:%d error: invalid argument count, expected %d, got %d\n", paramTypes.size(), argTypes.size());
+        }
+
+        int paramCount = std::min(argTypes.size(), paramTypes.size());
+
+        for(int i = 0; i < paramCount; i++){
+            unify_types(paramTypes[i], argTypes[i]);
+        }
+        return targetNode->get_type();
+    }
 
 

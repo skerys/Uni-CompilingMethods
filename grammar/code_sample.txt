@@ -1,16 +1,5 @@
-func void yeet(){
-
-}
-
-func void main()
+func int main()
 {
-    int a
-    int b
-
-    b = a + 1
-    a = a + b
-    a = 1 + b
-    
-    yeet(a, b)
-    yote(a, b)
+    int i
+    return i
 }

@@ -17,6 +17,10 @@ public:
 
     Token* accept(TokenType type){
         currentToken = tokens[offset];
+        while(currentToken.type == TokenType::NEWLINE && type != TokenType::NEWLINE){
+            offset++;
+            currentToken = tokens[offset];
+        }
         if(currentToken.type == type){
             offset++;
             
@@ -27,6 +31,10 @@ public:
 
     Token* expect(TokenType type){
         currentToken = tokens[offset];
+        while(currentToken.type ==TokenType::NEWLINE && type != TokenType::NEWLINE){
+            offset++;
+            currentToken = tokens[offset];
+        }
         if(currentToken.type == type){
             offset++;
 
@@ -35,6 +43,9 @@ public:
         } else{
             
             running = false;
+            printf("unexpected token at offset: %d, expected %s, got %s\n", offset, TokenNames[type].c_str(), TokenNames[currentToken.type].c_str());
+            exit(1);
+            std::cout << "a" << std::endl;  
             return nullptr;
         }
     }
@@ -45,6 +56,11 @@ public:
     }
 
     bool peek_two(TokenType first, TokenType second){
+        currentToken = tokens[offset];
+        while(currentToken.type ==TokenType::NEWLINE && first != TokenType::NEWLINE && second != TokenType::NEWLINE){
+            offset++;
+            currentToken = tokens[offset];
+        }
         return tokens[offset].type == first && tokens[offset+1].type == second;
     }
 
@@ -149,9 +165,11 @@ public:
         
 
         switch(currentToken.type){
-            case TokenType::LIT_INT : return new LitExpr(std::get<int>(expect(TokenType::LIT_INT)->value));
-            case TokenType::LIT_STR : return new LitExpr(std::get<std::string>(expect(TokenType::LIT_STR)->value));
-            case TokenType::LIT_FLOAT : return new LitExpr(std::get<float>(expect(TokenType::LIT_FLOAT)->value));
+            case TokenType::KW_TRUE : return new LitExpr(expect(TokenType::KW_TRUE));
+            case TokenType::KW_FALSE : return new LitExpr(expect(TokenType::KW_FALSE));
+            case TokenType::LIT_INT : return new LitExpr(expect(TokenType::LIT_INT));
+            case TokenType::LIT_STR : return new LitExpr(expect(TokenType::LIT_STR));
+            case TokenType::LIT_FLOAT : return new LitExpr(expect(TokenType::LIT_FLOAT));
             case TokenType::IDENT :  return new VarExpr(expect(TokenType::IDENT));
             case TokenType::OP_PAREN_OPEN : return parse_expr_priority();
             default : 
@@ -277,7 +295,9 @@ public:
     }
 
     Stmt* parse_stmt_return(){    
-        return new ReturnStmt(parse_expr(), expect(TokenType::KW_RETURN));
+        auto token = expect(TokenType::KW_RETURN);
+        auto expr = (token_type() != TokenType::NEWLINE) ? parse_expr() : nullptr;
+        return new ReturnStmt(expr, token);
     }
 
     Stmt* parse_stmt_while()
@@ -336,7 +356,8 @@ public:
     }
 
     Stmt* parse_expr_stmt(){
-        return new ExprStmt(parse_expr());
+        auto expr = parse_expr();
+        return new ExprStmt(expr);
     }
 
     Stmt* parse_stmt_elif(){
@@ -372,7 +393,8 @@ public:
         auto type = parseType();
         auto name = expect(TokenType::IDENT);
         if(accept(TokenType::OP_ASSIGN)!= nullptr){
-            return new DeclareVarStmt(type, name, parse_expr());
+            auto expr = parse_expr();
+            return new DeclareVarStmt(type, name, expr);
         }else{
             return new DeclareVarStmt(type, name, nullptr);
         }
@@ -398,6 +420,8 @@ public:
                 return new NextStmt(expect(TokenType::KW_NEXT));
             case TokenType::KW_BREAK : 
                 return new BreakStmt(expect(TokenType::KW_BREAK));
+            case TokenType::NEWLINE :
+                expect(TokenType::NEWLINE); return nullptr;
             default : return parse_expr_stmt();
         }
         
@@ -415,7 +439,8 @@ public:
             if(accept(TokenType::OP_CB_CLOSE) != nullptr){
                 break;
             }else{
-                stmts.push_back(parse_stmt());
+                auto stmt = parse_stmt();
+                if(stmt) stmts.push_back(stmt);
             }
         }
         return new StmtBlock(stmts);
@@ -434,6 +459,10 @@ public:
     }
 
     Decl* parse_decl(){
+        while(accept(TokenType::NEWLINE) != nullptr){
+            expect(TokenType::NEWLINE);
+        }
+
         switch(currentToken.type){
             case TokenType::KW_FUNC : return parse_func_decl();
             case TokenType::KW_CLASS : //return parse_class_decl();
@@ -465,11 +494,13 @@ int main(int argc, char** argv){
         std::cout << "usage: tm <code_path>" << std::endl;
         return 1;
     }
+
     std::vector<Token> tokens = lex_file(argv[1], true);
     Parser p(tokens);
     Program* prog = p.parse_program();
     if(p.running) prog->print_node();
     Scope* rootScope = new Scope(nullptr);
     prog->resolve_names(rootScope);
+    prog->check_types();
 
 }
