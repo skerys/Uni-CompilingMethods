@@ -134,7 +134,8 @@ public:
             members[name] = node;
         }else{
             //found
-            printf("duplicate variable: %s at %d:%d", name, token->line_no, token->column_no);
+            
+            printf("duplicate variable: %s at %d:%d\n", name.c_str(), token->line_no, token->column_no);
         }
     }
 
@@ -148,8 +149,8 @@ public:
         if(parentScope != nullptr){
             return parentScope->resolve_name(token);
         }
-
-        printf("undeclared variable: %s at %d:%d", name, token->line_no, token->column_no);
+        printf("undeclared variable: %s at %d:%d\n", name.c_str(), token->line_no, token->column_no);
+        return nullptr;
     }
 };
 

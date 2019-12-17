@@ -261,6 +261,12 @@ class InputStmt : public Stmt{
         indentLevel--;
     }
 
+    void resolve_names(Scope* scope){
+        for(auto&& i : idents){
+            i->resolve_names(scope);
+        }
+    }
+
 };
 
 class OutputStmt : public Stmt{
@@ -279,12 +285,19 @@ class OutputStmt : public Stmt{
         }
         indentLevel--;
     }
+
+    void resolve_names(Scope* scope){
+        for(auto&& e : exprs){
+            e->resolve_names(scope);
+        }
+    }
 };
 
 class DeclareVarStmt : public Stmt{
     Type* type;
     Token* ident;
     Expr* assignExpr;
+    int stackSlot;
     public:
     DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){
         add_children(type);
@@ -301,6 +314,12 @@ class DeclareVarStmt : public Stmt{
             assignExpr->print_node();
         }
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        scope->add(ident, this);
+        stackSlot = stackSlotIndex;
+        stackSlotIndex++;
     }
 };
 

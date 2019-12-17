@@ -71,9 +71,9 @@ public:
                 expect(TokenType::KW_VOID);
                 typePtr = new PrimitiveType(PrimitiveTypeName::VOID);
                 return typePtr;
-            case TokenType::IDENT:
+            /*case TokenType::IDENT:
                 typePtr = new CustomType(expect(TokenType::IDENT));
-                return typePtr;
+                return typePtr;*/
             default:
                 std::cout << "parseType error" << std::endl;
                 running = false;
@@ -119,7 +119,6 @@ public:
         std::vector<Expr*> args;
         expect(TokenType::OP_PAREN_OPEN);
         expect(TokenType::OP_PAREN_OPEN);
-        std::cout << "current id" << currentToken.id << std::endl;
         
         if(currentToken.type != TokenType::OP_PAREN_CLOSE){
             args.push_back(parse_expr());
@@ -380,9 +379,9 @@ public:
     }
     Stmt* parse_stmt(){
         //std::cout << TokenNames[token_type()] <<std::endl;
-        if(peek_two(TokenType::IDENT, TokenType::IDENT)){
+        /*if(peek_two(TokenType::IDENT, TokenType::IDENT)){
             return parse_stmt_declare();
-        }
+        }*/
 
         switch(token_type()){
             case TokenType::KW_BOOL:

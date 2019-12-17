@@ -1,17 +1,16 @@
+func void yeet(){
+
+}
+
 func void main()
 {
-    while 1{
+    int a
+    int b
 
-    }
-    if a == 3{
-
-    }
-    elif a > 3{
-
-    }
-
-    for int a =3; a<7; a = a+1{
-        
-    }
+    b = a + 1
+    a = a + b
+    a = 1 + b
     
+    yeet(a, b)
+    yote(a, b)
 }

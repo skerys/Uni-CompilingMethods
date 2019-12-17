@@ -29,6 +29,7 @@ class Expr : public Node{};
 
 class VarExpr : public Expr{
     Token* var;
+    Node* target;
 public:
     VarExpr(Token* _var) : var(_var){}
     void print_node(){
@@ -36,6 +37,10 @@ public:
         indentLevel++;
         print_text("name: " + std::get<std::string>(var->value));
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        target = scope->resolve_name(var);
     }
 };
 
@@ -52,6 +57,9 @@ void print_node(){
         lastNl = true;
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        //nothin
+    }
 };
 
 class ParenExpr : public Expr{
@@ -66,6 +74,9 @@ public:
         print_text("inside: ", false);
         inside->print_node();
         indentLevel--;
+    }
+    void resolve_names(Scope* scope){
+        //nothin
     }
 };
 
@@ -89,6 +100,10 @@ public:
         expr->print_node();
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        expr->resolve_names(scope);
+    }
+    
 };
 
 class ArithExpr : public Expr{
@@ -116,6 +131,10 @@ public:
         print_text("right: ", false);
         right->print_node();
         indentLevel--;
+    }
+    void resolve_names(Scope* scope){
+        left->resolve_names(scope);
+        right->resolve_names(scope);
     }
 };
 
@@ -146,6 +165,10 @@ public:
         right->print_node();
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        left->resolve_names(scope);
+        right->resolve_names(scope);
+    }
 };
 
 class LogicExpr : public Expr{
@@ -173,12 +196,17 @@ public:
         right->print_node();
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        left->resolve_names(scope);
+        right->resolve_names(scope);
+    }
 };
 
 //a = b = 4
 class AssignExpr : public Expr{
     Expr* left;
     Expr* right;
+    Node* target;
     public:
     AssignExpr(Expr* _left, Expr* _right) : left(_left), right(_right)
     {
@@ -194,12 +222,17 @@ class AssignExpr : public Expr{
         right->print_node();
         indentLevel--;
     }
+    void resolve_names(Scope* scope){
+        left->resolve_names(scope);
+        right->resolve_names(scope);
+    }
 };
 
 
 class FnCallExpr : public Expr{
     Token* toCall; 
     std::vector<Expr*> callArgs;
+    Node* targetNode;
 public:
     FnCallExpr(Token* _toCall, std::vector<Expr*> _callParams) : toCall(_toCall), callArgs(_callParams)
     {
@@ -214,6 +247,13 @@ public:
             callArgs[i]->print_node();
         }
         indentLevel--;
+    }
+
+    void resolve_names(Scope* scope){
+        targetNode = scope->resolve_name(toCall);
+        for(auto&& a : callArgs){
+            a->resolve_names(scope);
+        }
     }
 };
 
