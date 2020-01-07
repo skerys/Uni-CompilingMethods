@@ -500,7 +500,15 @@ int main(int argc, char** argv){
     if(p.running) prog->print_node();
     std::cout << std::endl;
     Scope* rootScope = new Scope(nullptr);
+    printf("yyet\n");
     prog->resolve_names(rootScope);
+    printf("yoot\n");
     prog->check_types();
+    
+    CodeWriter writer;
+    setup_instructions();
+    prog->gen_code(writer);
+    writer.dump_code();
+
 
 }

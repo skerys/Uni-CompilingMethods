@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <sstream>
+#include "../code_gen/code_writer.h"
 
 class Scope;
 class Type;
@@ -51,6 +52,7 @@ void print_error(Token* token, std::string error_message){
 class Node{
     public:
     Node* parent = nullptr;
+    int stackSlot = -1;
     virtual void print_node(){
         std::cout << "print node not implemented for type " << typeid(this).name() << std::endl;
     }
@@ -61,6 +63,10 @@ class Node{
          std::cout << "reference token not implemented for type " << typeid(this).name() << std::endl;
          return nullptr;
     }
+    virtual void gen_code(CodeWriter w)
+    {
+        std::cout << "gen code not implemented for type " << typeid(this).name() << std::endl;
+    }
 
     virtual Type* get_type(){
         return nullptr;
@@ -69,6 +75,12 @@ class Node{
     virtual Type* check_types()
     {
         std::cout << "check type not implemented for type " << typeid(this).name() << std::endl;
+        return nullptr;
+    }
+
+    virtual Label* get_start_label()
+
+    {
         return nullptr;
     }
 
@@ -226,7 +238,6 @@ public:
 
 class Param : public Node{
     Token* name;
-    int stackSlot;
 public:
     Type* type;
     Param(Type* _type, Token* _name) : type(_type), name(_name) {

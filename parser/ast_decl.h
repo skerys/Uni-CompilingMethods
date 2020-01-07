@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast_stmt.h"
+#include "../code_gen/label.h"
 
 
 
@@ -8,9 +9,7 @@ enum AccesibilityName{
     PUBLIC, PRIVATE
 };
 
-enum Label{
-    START_LABEL, NO_LABEL
-};
+
 
 class Decl : public Node{
 public:
@@ -22,12 +21,12 @@ class Program : public Node{
     std::vector<Decl*> decls;
 
     public:
+    Label* mainLabel = nullptr;
     Program(std::vector<Decl*> _decls) : decls(_decls)
     {
         add_children(decls);
     }
 
-    Label mainLabel = Label::NO_LABEL;
     void addDecl(Decl* d){
         decls.push_back(d);
     }
@@ -43,14 +42,28 @@ class Program : public Node{
     }
 
     void resolve_names(Scope* scope){
+        
         for(auto&& fn : decls){
+            printf("jezau\n");
             scope->add(fn->name, fn);
         }
         for(auto&& fn : decls){
+            printf("jezau\n");
             fn->resolve_names(scope);
         }
-        if(mainLabel == Label::NO_LABEL){
+        if(mainLabel == nullptr){
             print_error(lastToken, "no 'main' found\n");
+        }
+    }
+
+    void gen_code(CodeWriter w){
+        w.write(InstrName::I_CALL_BEGIN);
+        std::vector<int> zero;
+        zero.push_back(0);
+        w.write(InstrName::I_CALL, mainLabel, zero);
+        w.write(InstrName::I_EXIT);
+        for(auto&& decl : decls){
+            decl->gen_code(w);
         }
     }
 
@@ -65,12 +78,12 @@ class Program : public Node{
 //ClassBodyStmt, ClassBody, ClassDecl
 
 class FnDecl : public Decl{
-
 public:
     Type* returnType;
     std::vector<Param*> params;
     StmtBlock* body;
     Scope* mScope;
+    Label* startLabel;
     int numLocals;
     FnDecl(Type* _returnType,
            Token* _name, std::vector<Param*> _params, StmtBlock* _body) : returnType(_returnType), Decl(_name), params(_params), body(_body) 
@@ -78,6 +91,7 @@ public:
         add_children(params);
         add_children(returnType);
         add_children(body);
+        startLabel = new Label();
     }
 
     void print_node(){
@@ -97,7 +111,7 @@ public:
         if(std::get<std::string>(name->value) == "main"){
             bool mainFollowsSig = false;
             Program* program = find_ancestor<Program>();
-            program->mainLabel = Label::START_LABEL;
+            program->mainLabel = startLabel;
             
             auto primitiveType = dynamic_cast<PrimitiveType*>(returnType);
             if(primitiveType){
@@ -126,6 +140,17 @@ public:
         numLocals = stackSlotIndex;
     }
 
+    void gen_code(CodeWriter w){
+        w.place_label(startLabel);
+        if(numLocals > 0){
+            std::vector<int> operands;
+            operands.push_back(numLocals);
+            w.write(InstrName::I_ALLOC, operands);
+        }
+        body->gen_code(w);
+        w.write(InstrName::I_RET);
+    }
+
     Type* get_type()
     {
         return returnType;
@@ -137,6 +162,11 @@ public:
         }
         body->check_types();
         return nullptr;
+    }
+
+    Label* get_start_label()
+    {
+        return startLabel;
     }
 };
 

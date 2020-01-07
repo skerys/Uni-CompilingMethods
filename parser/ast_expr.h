@@ -49,6 +49,16 @@ public:
     }
 
     Type* check_types();
+
+    void gen_code(CodeWriter w){
+        if(target->stackSlot != -1){
+            w.write(InstrName::I_GET_L, target->stackSlot);
+        }
+        else{
+            printf("bad variable varexp\n");
+            exit(0);
+        }
+    }
 };
 
 class LitExpr : public Expr{
@@ -83,6 +93,16 @@ void print_node(){
         }
         return nullptr;
     }
+
+    void gen_code(CodeWriter w){
+        switch(litToken->type){
+            case TokenType::KW_FALSE : w.write(InstrName::I_INT_PUSH, 0); break;
+            case TokenType::KW_TRUE : w.write(InstrName::I_INT_PUSH, 1); break;
+            case TokenType::LIT_INT : w.write(InstrName::I_INT_PUSH, std::get<int>(litToken->value)); break;
+            //case TokenType::LIT_STR : return new PrimitiveType(PrimitiveTypeName::STRING);
+            //case TokenType::LIT_FLOAT : return new PrimitiveType(PrimitiveTypeName::FLOAT);
+        }
+    }
 };
 
 class ParenExpr : public Expr{
@@ -110,6 +130,10 @@ public:
     Type* check_types()
     {
         return nullptr;
+    }
+
+    void gen_code(CodeWriter w){
+        inside->gen_code(w);
     }
 };
 
@@ -198,6 +222,27 @@ public:
         }
         return leftType;
     }
+
+    void gen_code(CodeWriter w){
+        left->gen_code(w);
+        right->gen_code(w);
+        auto type = dynamic_cast<PrimitiveType*>(left->check_types());
+        switch(op){
+            case ArithOp::ADD:
+                type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_ADD) : w.write(InstrName::I_INT_ADD);
+                break;
+            case ArithOp::SUB:
+                type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_SUB) : w.write(InstrName::I_INT_SUB);
+                break;
+            case ArithOp::MUL:
+                type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_MUL) : w.write(InstrName::I_INT_MUL);
+                break;
+            case ArithOp::DIV:
+                type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_DIV) : w.write(InstrName::I_INT_DIV);
+                break;
+
+        }
+    }
 };
 
 class CompareExpr : public Expr{
@@ -249,6 +294,19 @@ public:
             print_error(reference_token(), "values of types '" + leftType->get_type_name() + "' and '" + rightType->get_type_name() + "' cannot be compared\n");
         }
         return new PrimitiveType(PrimitiveTypeName::BOOL);
+    }
+
+    void gen_code(CodeWriter w){
+        left->gen_code(w);
+        right->gen_code(w);
+        switch(op){
+            case CompareOp::E: w.write(InstrName::I_EQ); break;
+            case CompareOp::G: w.write(InstrName::I_INT_GREATER); break;
+            case CompareOp::GE: w.write(InstrName::I_INT_GREATER_EQ); break;
+            case CompareOp::L: w.write(InstrName::I_INT_LESS); break;
+            case CompareOp::LE: w.write(InstrName::I_INT_LESS_EQ); break;
+            case CompareOp::NE: w.write(InstrName::I_NOT_EQ); break;
+        }
     }
 };
 
@@ -338,6 +396,12 @@ class AssignExpr : public Expr{
 
         return leftType;
     }
+
+    void gen_code(CodeWriter w){
+
+    }
+
+
 };
 
 
@@ -373,6 +437,16 @@ public:
     }
 
     Type* check_types();
+
+    void gen_code(CodeWriter w){
+        w.write(InstrName::I_CALL_BEGIN);
+        for(auto&& a : callArgs){
+            a->gen_code(w);
+        }
+        std::vector<int> argsize;
+        argsize.push_back(callArgs.size());
+        w.write(InstrName::I_CALL, targetNode->get_start_label(), argsize);
+    }
 
 };
 

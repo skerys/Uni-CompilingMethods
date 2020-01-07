@@ -41,6 +41,12 @@ class StmtBlock : public Node{
         }
         return nullptr;
     }
+
+    void gen_code(CodeWriter w){
+        for(auto&& s : statements){
+            s->gen_code(w);
+        }
+    }
 };  
 
 
@@ -64,6 +70,11 @@ class ExprStmt: public Stmt{
     Type* check_types()
     {
         return expr->check_types();
+    }
+    void gen_code(CodeWriter w)
+    {
+        expr->gen_code(w);
+        w.write(InstrName::I_POP);
     }
 };
 
@@ -128,9 +139,12 @@ class WhileStmt : public Stmt{
     Expr* condition;
     StmtBlock* body;
 public:
+    Label* endLabel;
+    Label* startLabel;
     WhileStmt(Expr* _condition, StmtBlock* _body) : condition(_condition), body(_body) {
         add_children(condition);
         add_children(body);
+        endLabel = new Label();
     }
     void print_node(){
         print_text("WhileStmt:");
@@ -154,6 +168,16 @@ public:
         body->check_types();
         return nullptr;
     }
+
+    void gen_code(CodeWriter w)
+    {
+        w.place_label(startLabel);
+        condition->gen_code(w);
+        w.write_with_label(InstrName::I_BZ, endLabel);
+        body->gen_code(w);
+        w.write_with_label(InstrName::I_BR, startLabel);
+        w.place_label(endLabel);
+    }
 };
 
 class ForStmt : public Stmt{
@@ -162,11 +186,14 @@ class ForStmt : public Stmt{
     Stmt* final;
     StmtBlock* body;
 public:
+    Label* endLabel;
+    Label* startLabel;
     ForStmt(Stmt* _initial, Stmt* _condition, Stmt* _final, StmtBlock* _body) : initial(_initial), condition(_condition), final(_final), body(_body){
         add_children(initial);
         add_children(condition);
         add_children(final);
         add_children(body);
+        endLabel = new Label();
     }
     void print_node(){
         print_text("ForStmt:");
@@ -195,6 +222,18 @@ public:
         unify_types(boolType, condition->check_types(), condition->reference_token());
         body->check_types();
         return nullptr;
+    }
+
+    void gen_code(CodeWriter w)
+    {
+        initial->gen_code(w);
+        w.place_label(startLabel);
+        condition->gen_code(w);
+        w.write_with_label(InstrName::I_BZ, endLabel);
+        body->gen_code(w);
+        final->gen_code(w);
+        w.write_with_label(InstrName::I_BR, startLabel);
+        w.place_label(endLabel);
     }
 
 };
@@ -235,12 +274,25 @@ public:
         unify_types(retType, valueType, keyword);
         return retType;
     }
+
+    void gen_code(CodeWriter w)
+    {
+        if(value)
+        {
+            value->gen_code(w);
+            w.write(InstrName::I_RET_V);
+        }
+        else{
+            w.write(InstrName::I_RET);
+        }
+    }
 };
 
 class BreakStmt : public Stmt{
 public:
     Node* targetNode = nullptr;
     Token* keyword;
+    Label* endLabel = nullptr;
     BreakStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("BreakStmt:");
@@ -254,10 +306,12 @@ public:
         while(currNode){
             if(dynamic_cast<WhileStmt*>(currNode)){
                 targetNode = currNode;
+                endLabel = dynamic_cast<WhileStmt*>(currNode)->endLabel;
                 break;
             }
             else if(dynamic_cast<ForStmt*>(currNode)){
                 targetNode = currNode;
+                endLabel = dynamic_cast<ForStmt*>(currNode)->endLabel;
                 break;
             }
             else{
@@ -273,11 +327,16 @@ public:
     {
         return nullptr;
     }
+
+    void gen_code(CodeWriter w){
+        w.write_with_label(InstrName::I_BR, endLabel);
+    }
 };
 class NextStmt : public Stmt{
 public:
     Node* targetNode = nullptr;
     Token* keyword;
+    Label* startLabel = nullptr;
     NextStmt(Token* _keyword) : keyword(_keyword){}
     void print_node(){
         print_text("NextStmt:");
@@ -291,10 +350,12 @@ public:
         while(currNode){
             if(dynamic_cast<WhileStmt*>(currNode)){
                 targetNode = currNode;
+                 startLabel = dynamic_cast<WhileStmt*>(currNode)->startLabel;
                 break;
             }
             else if(dynamic_cast<ForStmt*>(currNode)){
                 targetNode = currNode;
+                 startLabel = dynamic_cast<ForStmt*>(currNode)->startLabel;
                 break;
             }
             else{
@@ -311,6 +372,10 @@ public:
     Type* check_types()
     {
         return nullptr;
+    }
+
+    void gen_code(CodeWriter w){
+        w.write_with_label(InstrName::I_BR, startLabel);
     }
 };
 
@@ -373,7 +438,6 @@ class OutputStmt : public Stmt{
 class DeclareVarStmt : public Stmt{
     Token* ident;
     Expr* assignExpr;
-    int stackSlot;
     public:
     Type* type;
     DeclareVarStmt(Type* _type, Token* _ident, Expr* _assignExpr) : type(_type), ident(_ident), assignExpr(_assignExpr){
@@ -411,6 +475,15 @@ class DeclareVarStmt : public Stmt{
             unify_types(type, valueType, ident);
         }
         return nullptr;
+    }
+
+    void gen_code(CodeWriter w)
+    {
+        if(assignExpr != nullptr)
+        {
+            assignExpr->gen_code(w);
+            w.write(InstrName::I_SET_L, stackSlot);
+        }
     }
 };
 

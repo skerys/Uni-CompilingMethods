@@ -1,16 +1,3 @@
-func int main(){
+func int main(string s){
     
-}
-
-func int foo(){
-    int a
-    while true{
-        if 5>3 {
-            b(5 + true)
-        }
-    }
-}
-
-func int bar(int a){
-
 }
