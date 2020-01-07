@@ -55,7 +55,6 @@ class Program : public Node{
     }
 
     void gen_code(CodeWriter w){
-        printf("yyet");
         w.write(InstrName::I_CALL_BEGIN);
         std::vector<int> zero;
         zero.push_back(0);
@@ -140,18 +139,14 @@ public:
     }
 
     void gen_code(CodeWriter w){
-        printf("yyet");
-        
         w.place_label(startLabel);
-        printf("yyet");
         if(numLocals > 0){
             std::vector<int> operands;
             operands.push_back(numLocals);
             w.write(InstrName::I_ALLOC, operands);
         }
-        printf("yyet");
+ 
         body->gen_code(w);
-        printf("yyet");
         w.write(InstrName::I_RET);
     }
 

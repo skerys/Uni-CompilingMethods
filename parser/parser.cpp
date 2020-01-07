@@ -338,14 +338,18 @@ public:
         std::vector<VarExpr*> idents;
         expect(TokenType::KW_READ);
 
-        if(accept(TokenType::IDENT) == nullptr){
+
+        Token* ident = accept(TokenType::IDENT);
+        if(ident == nullptr){
             printf("parser error at %d:%d : missing variable after 'read'\n", currentToken.line_no, currentToken.column_no);
             running = false;
         }
-        idents.push_back(new VarExpr(expect(TokenType::IDENT)));
+        idents.push_back(new VarExpr(ident));
 
+        printf("yeeet\n");
         while(1){
             if(accept(TokenType::OP_COMMA_SEP) != nullptr){
+                printf("yeeet\n");
                 idents.push_back(new VarExpr(expect(TokenType::IDENT)));
             }else{
                 return new InputStmt(idents);

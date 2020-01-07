@@ -29,8 +29,8 @@ class Expr : public Node{};
 
 class VarExpr : public Expr{
     Token* var;
-    Node* target;
 public:
+    Node* target;
     VarExpr(Token* _var) : var(_var){}
     void print_node(){
         print_text("VarExpr:");
@@ -99,8 +99,15 @@ void print_node(){
             case TokenType::KW_FALSE : w.write(InstrName::I_INT_PUSH, 0); break;
             case TokenType::KW_TRUE : w.write(InstrName::I_INT_PUSH, 1); break;
             case TokenType::LIT_INT : w.write(InstrName::I_INT_PUSH, std::get<int>(litToken->value)); break;
-            //case TokenType::LIT_STR : return new PrimitiveType(PrimitiveTypeName::STRING);
-            //case TokenType::LIT_FLOAT : return new PrimitiveType(PrimitiveTypeName::FLOAT);
+            case TokenType::LIT_FLOAT : w.write(InstrName::I_FLOAT_PUSH, reinterpret_cast<int&>(std::get<float>(litToken->value))); break;
+            case TokenType::LIT_STR : {
+                stringStorage.push_back(std::get<std::string>(litToken->value));
+                w.write(InstrName::I_STR_PUSH, stringStorageIndex);
+                stringStorageIndex++;
+                printf("%d\n",stringStorageIndex);
+                break;
+
+            }
         }
     }
 };
@@ -379,6 +386,7 @@ class AssignExpr : public Expr{
     }
     void resolve_names(Scope* scope){
         left->resolve_names(scope);
+        target = dynamic_cast<VarExpr*>(left)->target;
         right->resolve_names(scope);
     }
 
@@ -398,7 +406,17 @@ class AssignExpr : public Expr{
     }
 
     void gen_code(CodeWriter w){
-
+        printf("wow\n");
+        left->gen_code(w);
+        printf("wow\n");
+        right->gen_code(w);
+        printf("wow\n");
+        if(target->stackSlot != -1){
+            printf("wow\n");
+            w.write(InstrName::I_SET_L, target->stackSlot);
+        }else{
+            printf("bad assignment\n");
+        }
     }
 
 

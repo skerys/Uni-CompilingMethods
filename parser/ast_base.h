@@ -208,7 +208,7 @@ class Scope{
 public:
     Scope* parentScope;
     std::map<std::string, Node*> members;
-    Scope(Scope* _parentScope) : parentScope(_parentScope) {} 
+    Scope(Scope* _parentScope) : parentScope(_parentScope) {   } 
 
     void add(Token* token, Node* node){
         auto name = std::get<std::string>(token->value);

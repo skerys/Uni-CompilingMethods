@@ -3,10 +3,12 @@
 #include "instructions.h"
 #include <vector>
 
+static std::vector<std::string> stringStorage;
+static int stringStorageIndex = 0;
+
 class CodeWriter{
 public:
-    std::vector<int>& code;
-    
+    std::vector<int>& code;    
 
     CodeWriter(std::vector<int>& _code) : code(_code){}
 

@@ -1,5 +1,10 @@
-func int main(string s){
-    while true{
 
-    }   
+
+func int main(string s){
+    string a = "yasfdsg"
+    string b = "asgdg"
+    int c
+    int ba
+    read c, b
+    write a, ba
 }

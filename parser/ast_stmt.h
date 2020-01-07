@@ -83,6 +83,7 @@ class IfElseStmt : public Stmt{
     StmtBlock* elseBody;
 
     public:
+    std::vector<Label*> endLabels;
     IfElseStmt(std::vector<std::pair<Expr*, StmtBlock*>> _branches, StmtBlock* _elseBody):
     branches(_branches), elseBody(_elseBody) {
         for(auto&& b : branches){
@@ -133,6 +134,20 @@ class IfElseStmt : public Stmt{
         }
         return nullptr;
     }
+
+    void gen_code(CodeWriter w){
+        Label* lastLabel = new Label();
+        for(int i = 0; i < branches.size(); i ++){
+            endLabels.push_back(new Label());
+            branches[i].first->gen_code(w);
+            w.write_with_label(InstrName::I_BZ, endLabels[i]);
+            branches[i].second->gen_code(w);
+            w.write_with_label(InstrName::I_BR, lastLabel);
+            w.place_label(endLabels[i]);
+        }
+        if(elseBody) elseBody->gen_code(w);
+        w.place_label(lastLabel);
+    }
 };
 
 class WhileStmt : public Stmt{
@@ -172,19 +187,12 @@ public:
 
     void gen_code(CodeWriter w)
     {
-        printf("yyet");
         w.place_label(startLabel);
-        printf("yyet");
         condition->gen_code(w);
-        printf("yyet");
         w.write_with_label(InstrName::I_BZ, endLabel);
-        printf("yyet");
         body->gen_code(w);
-        printf("yyet");
         w.write_with_label(InstrName::I_BR, startLabel);
-        printf("yyet");
         w.place_label(endLabel);
-        printf("yyet");
     }
 };
 
@@ -414,6 +422,19 @@ class InputStmt : public Stmt{
         return nullptr;
     }
 
+    void gen_code(CodeWriter w){
+        for(auto&& i : idents){
+            i->gen_code(w);
+            auto type = dynamic_cast<PrimitiveType*>(i->check_types());
+            switch (type->type)
+            {
+                case PrimitiveTypeName::INT : w.write(InstrName::I_READ_INT); break;
+                case PrimitiveTypeName::FLOAT : w.write(InstrName::I_READ_FLOAT); break;
+                case PrimitiveTypeName::STRING : w.write(InstrName::I_READ_STRING); break;
+            }
+        }
+    }
+
 };
 
 class OutputStmt : public Stmt{
@@ -441,6 +462,19 @@ class OutputStmt : public Stmt{
     Type* check_types()
     {
         return nullptr;
+    }
+
+    void gen_code(CodeWriter w){
+        for(auto&& e : exprs){
+            e->gen_code(w);
+            auto type = dynamic_cast<PrimitiveType*>(e->check_types());
+            switch (type->type)
+            {
+                case PrimitiveTypeName::INT : w.write(InstrName::I_PRINT_INT); break;
+                case PrimitiveTypeName::FLOAT : w.write(InstrName::I_PRINT_FLOAT); break;
+                case PrimitiveTypeName::STRING : w.write(InstrName::I_PRINT_STRING); break;
+            }
+        }
     }
 };
 
