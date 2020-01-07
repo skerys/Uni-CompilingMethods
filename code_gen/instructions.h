@@ -3,12 +3,12 @@
 #include <map>
 
 enum InstrName{
-    I_INT_ADD, I_INT_SUB, I_INT_MUL, I_INT_DIV, I_FLOAT_ADD, I_FLOAT_SUB, I_FLOAT_MUL, I_FLOAT_DIV, I_INT_LESS,I_INT_GREATER,I_INT_LESS_EQ,I_INT_GREATER_EQ, I_NOT_EQ, 
+    I_UNARY_NEGATIVE, I_INT_ADD, I_INT_SUB, I_INT_MUL, I_INT_DIV, I_INT_MOD, I_FLOAT_ADD, I_FLOAT_SUB, I_FLOAT_MUL, I_FLOAT_DIV, I_FLOAT_MOD, I_INT_LESS,I_INT_GREATER,I_INT_LESS_EQ,I_INT_GREATER_EQ, I_NOT_EQ, 
     I_EQ, I_GET_L, I_SET_L, I_POP, I_INT_PUSH, I_FLOAT_PUSH, I_STR_PUSH, I_ALLOC, I_BR, I_BZ, I_CALL_BEGIN, I_CALL, I_RET, I_RET_V, I_PRINT_INT, I_PRINT_FLOAT, I_PRINT_STRING, I_READ_INT, I_READ_FLOAT, I_READ_STRING,
     I_EXIT
 };
 
-std::string InstrNameStrings[] = {"I_INT_ADD", "I_INT_SUB", "I_INT_MUL", "I_INT_DIV", "I_FLOAT_ADD", "I_FLOAT_SUB", "I_FLOAT_MUL", "I_FLOAT_DIV", "I_INT_LESS",
+std::string InstrNameStrings[] = {"I_UNARY_NEGATIVE", "I_INT_ADD", "I_INT_SUB", "I_INT_MUL", "I_INT_DIV", "I_INT_MOD", "I_FLOAT_ADD", "I_FLOAT_SUB", "I_FLOAT_MUL", "I_FLOAT_DIV", "I_FLOAT_MOD", "I_INT_LESS",
     "I_INT_GREATER","I_INT_LESS_EQ","I_INT_GREATER_EQ", "I_NOT_EQ", "I_EQ", "I_GET_L", "I_SET_L", "I_POP", "I_INT_PUSH","I_FLOAT_PUSH", "I_STR_PUSH", "I_ALLOC", "I_BR", "I_BZ",
     "I_CALL_BEGIN", "I_CALL", "I_RET", "I_RET_V", "I_PRINT_INT", "I_PRINT_FLOAT", "I_PRINT_STRING", "I_READ_INT", "I_READ_FLOAT", "I_READ_STRING", "I_EXIT"};
 
@@ -39,6 +39,9 @@ void setup_instructions(){
     add_instr(0x15, InstrName::I_FLOAT_SUB, 0);
     add_instr(0x16, InstrName::I_FLOAT_MUL, 0);
     add_instr(0x17, InstrName::I_FLOAT_DIV, 0);
+    add_instr(0x18, InstrName::I_UNARY_NEGATIVE, 0);
+    add_instr(0x19, InstrName::I_INT_MOD, 0);
+    add_instr(0x1A, InstrName::I_FLOAT_MOD, 0);
 
     add_instr(0x20, InstrName::I_EQ, 0);
     add_instr(0x21, InstrName::I_NOT_EQ, 0);
@@ -66,9 +69,9 @@ void setup_instructions(){
     add_instr(0x50, InstrName::I_PRINT_INT, 0);
     add_instr(0x51, InstrName::I_PRINT_FLOAT, 0);
     add_instr(0x52, InstrName::I_PRINT_STRING, 0);
-    add_instr(0x53, InstrName::I_READ_INT, 0);
-    add_instr(0x54, InstrName::I_READ_FLOAT, 0);
-    add_instr(0x55, InstrName::I_READ_STRING, 0);
+    add_instr(0x53, InstrName::I_READ_INT, 2);
+    add_instr(0x54, InstrName::I_READ_FLOAT, 2);
+    add_instr(0x55, InstrName::I_READ_STRING, 2);
 
 }
 

@@ -1,10 +1,6 @@
-
-
 func int main(string s){
-    string a = "yasfdsg"
-    string b = "asgdg"
-    int c
-    int ba
-    read c, b
-    write a, ba
+     float a = 15.0
+     float b
+     read b
+     write a+b
 }

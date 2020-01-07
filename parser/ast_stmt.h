@@ -424,14 +424,19 @@ class InputStmt : public Stmt{
 
     void gen_code(CodeWriter w){
         for(auto&& i : idents){
-            i->gen_code(w);
             auto type = dynamic_cast<PrimitiveType*>(i->check_types());
+
+            std::vector<int> location;
+            location.push_back(i->reference_token()->line_no);
+            location.push_back(i->reference_token()->column_no);
+
             switch (type->type)
             {
-                case PrimitiveTypeName::INT : w.write(InstrName::I_READ_INT); break;
-                case PrimitiveTypeName::FLOAT : w.write(InstrName::I_READ_FLOAT); break;
-                case PrimitiveTypeName::STRING : w.write(InstrName::I_READ_STRING); break;
+                case PrimitiveTypeName::INT : w.write(InstrName::I_READ_INT, nullptr, location); break;
+                case PrimitiveTypeName::FLOAT : w.write(InstrName::I_READ_FLOAT, nullptr, location); break;
+                case PrimitiveTypeName::STRING : w.write(InstrName::I_READ_STRING, nullptr, location); break;
             }
+            w.write(InstrName::I_SET_L, i->target->stackSlot);
         }
     }
 

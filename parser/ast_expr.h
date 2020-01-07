@@ -5,12 +5,13 @@
 #include <algorithm>
 
 
+
 enum UnaryOp{
     POSITIVE, NEGATIVE, NOT
 };
 
 enum ArithOp{
-    ADD, SUB, MUL, DIV
+    ADD, SUB, MUL, DIV, MOD
 };
 
 enum CompareOp{
@@ -177,6 +178,13 @@ public:
     {
         return expr->check_types();
     }
+
+    void gen_code(CodeWriter w){
+        expr->gen_code(w);
+        switch(op){
+            case UnaryOp::NEGATIVE: w.write(I_UNARY_NEGATIVE);break;
+        }
+    }
     
 };
 
@@ -197,6 +205,7 @@ public:
             case ArithOp::SUB : subType = "SUB"; break;
             case ArithOp::MUL : subType = "MUL"; break;
             case ArithOp::DIV : subType = "DIV"; break;
+            case ArithOp::MOD : subType = "MOD"; break;
         }
         print_text("ArithExpr("+ subType +"):");
         indentLevel++;
@@ -246,6 +255,9 @@ public:
                 break;
             case ArithOp::DIV:
                 type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_DIV) : w.write(InstrName::I_INT_DIV);
+                break;
+            case ArithOp::MOD:
+                type->type == PrimitiveTypeName::FLOAT ? w.write(InstrName::I_FLOAT_MOD) : w.write(InstrName::I_INT_MOD);
                 break;
 
         }
@@ -406,13 +418,9 @@ class AssignExpr : public Expr{
     }
 
     void gen_code(CodeWriter w){
-        printf("wow\n");
         left->gen_code(w);
-        printf("wow\n");
         right->gen_code(w);
-        printf("wow\n");
         if(target->stackSlot != -1){
-            printf("wow\n");
             w.write(InstrName::I_SET_L, target->stackSlot);
         }else{
             printf("bad assignment\n");

@@ -1,4 +1,5 @@
 #include "../lexer/lexer.h"
+#include "../vm/vm.h"
 #include <vector>
 #include <string>
 #include <memory>
@@ -210,6 +211,9 @@ public:
             }
             else if(accept(TokenType::OP_DIV) != nullptr){
                 left = new ArithExpr(ArithOp::DIV, left, parse_expr_unary());
+            }
+            else if(accept(TokenType::OP_MOD) != nullptr){
+                left = new ArithExpr(ArithOp::MOD, left, parse_expr_unary());
             }
             else
                 return left;
@@ -514,5 +518,7 @@ int main(int argc, char** argv){
     prog->gen_code(writer);
     writer.dump_code();
 
+    VM interpreter = VM(code, stringStorage);
+    interpreter.exec();
 
 }

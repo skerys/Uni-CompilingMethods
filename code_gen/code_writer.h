@@ -42,7 +42,7 @@ public:
         for(auto&& op : code){
             printf(" %d", op);
         }
-        printf("\n");
+        printf("\n\n\n\n");
     }
 
 

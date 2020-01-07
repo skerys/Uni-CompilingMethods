@@ -404,6 +404,7 @@ public:
             case '&' : change_state(State::S_OP_AND, false); break;
             case '|' : change_state(State::S_OP_OR, false); break;
             case '*' : complete_token(TokenType::OP_MULT, false); break;
+            case '%' : complete_token(TokenType::OP_MOD, false); break;
             case '!' : complete_token(TokenType::OP_LOGIC_NOT, false); break;
             case '{' : complete_token(TokenType::OP_CB_OPEN, false); break;
             case '}' : complete_token(TokenType::OP_CB_CLOSE, false); break;
