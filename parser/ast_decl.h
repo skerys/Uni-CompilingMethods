@@ -24,6 +24,7 @@ class Program : public Node{
     Label* mainLabel = nullptr;
     Program(std::vector<Decl*> _decls) : decls(_decls)
     {
+        printf("decls size : %d", _decls.size());
         add_children(decls);
     }
 
@@ -42,13 +43,10 @@ class Program : public Node{
     }
 
     void resolve_names(Scope* scope){
-        
         for(auto&& fn : decls){
-            printf("jezau\n");
             scope->add(fn->name, fn);
         }
         for(auto&& fn : decls){
-            printf("jezau\n");
             fn->resolve_names(scope);
         }
         if(mainLabel == nullptr){
@@ -57,6 +55,7 @@ class Program : public Node{
     }
 
     void gen_code(CodeWriter w){
+        printf("yyet");
         w.write(InstrName::I_CALL_BEGIN);
         std::vector<int> zero;
         zero.push_back(0);
@@ -141,13 +140,18 @@ public:
     }
 
     void gen_code(CodeWriter w){
+        printf("yyet");
+        
         w.place_label(startLabel);
+        printf("yyet");
         if(numLocals > 0){
             std::vector<int> operands;
             operands.push_back(numLocals);
             w.write(InstrName::I_ALLOC, operands);
         }
+        printf("yyet");
         body->gen_code(w);
+        printf("yyet");
         w.write(InstrName::I_RET);
     }
 

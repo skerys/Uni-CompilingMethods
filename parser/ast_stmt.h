@@ -145,6 +145,7 @@ public:
         add_children(condition);
         add_children(body);
         endLabel = new Label();
+        startLabel = new Label();
     }
     void print_node(){
         print_text("WhileStmt:");
@@ -171,12 +172,19 @@ public:
 
     void gen_code(CodeWriter w)
     {
+        printf("yyet");
         w.place_label(startLabel);
+        printf("yyet");
         condition->gen_code(w);
+        printf("yyet");
         w.write_with_label(InstrName::I_BZ, endLabel);
+        printf("yyet");
         body->gen_code(w);
+        printf("yyet");
         w.write_with_label(InstrName::I_BR, startLabel);
+        printf("yyet");
         w.place_label(endLabel);
+        printf("yyet");
     }
 };
 
@@ -194,6 +202,7 @@ public:
         add_children(final);
         add_children(body);
         endLabel = new Label();
+        startLabel = new Label();
     }
     void print_node(){
         print_text("ForStmt:");

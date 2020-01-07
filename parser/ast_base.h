@@ -123,8 +123,8 @@ class Type : public Node{
 public:
     virtual std::string get_type_name() = 0;
 
-    virtual bool is_comparable(){return false;};
-    virtual bool is_arithmethic(){return false;}
+    virtual bool is_comparable(){return true;};
+    virtual bool is_arithmethic(){return true;}
 
     Type* get_type(){
         return this;

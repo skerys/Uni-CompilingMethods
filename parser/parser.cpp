@@ -10,7 +10,7 @@ public:
     int offset;
     std::vector<Token> tokens;
     Token currentToken;
-    bool running;
+    bool running = true;
     
 
     Parser(std::vector<Token> _tokens) : offset(0), tokens(_tokens) {};
@@ -480,6 +480,7 @@ public:
                 decls.push_back(parse_decl());
             }
         }
+        printf("decls size in parser : %d", decls.size() );
         Program* p = new Program(decls);
         return p;
     };
@@ -500,12 +501,11 @@ int main(int argc, char** argv){
     if(p.running) prog->print_node();
     std::cout << std::endl;
     Scope* rootScope = new Scope(nullptr);
-    printf("yyet\n");
     prog->resolve_names(rootScope);
-    printf("yoot\n");
     prog->check_types();
     
-    CodeWriter writer;
+    std::vector<int> code;
+    CodeWriter writer(code);
     setup_instructions();
     prog->gen_code(writer);
     writer.dump_code();
